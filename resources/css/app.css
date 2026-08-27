@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+@plugin '@tailwindcss/forms';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/* Alpine.js の x-cloak: 初期化前の要素を隠す */
+[x-cloak] {
+    display: none !important;
+}
+
+/*
+ * 「視差効果を減らす」設定の端末ではアニメーションを止める。
+ * 個別の motion-reduce: ユーティリティに加えて、全体の保険としてここでも打ち消す。
+ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/*
+ * キーボード操作時のフォーカスを、どの部品でも必ず見えるようにする。
+ * :where() で詳細度 0 にしてあるので、部品ごとのリング指定があればそちらが優先される。
+ */
+:where(a, button, summary, [role='button'], [role='tab'], [role='menuitem'], [tabindex]):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/*
+ * テーマの配色。
+ *
+ * --color-primary / --color-accent の実際の値は config/theme.php から
+ * <head> の <style> で上書きされる（layouts/partials/theme.blade.php）。
+ * ここでの定義はビルド時の既定値であり、フォールバックも兼ねる。
+ *
+ * 派生色は color-mix() で primary から作っているため、
+ * primary を差し替えるだけでボタン・バッジ・リンクがまとめて追従する。
+ */
+@theme {
+    --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* ブランド色（明暗どちらのモードでも同じ） */
+    --color-primary: #4f46e5;
+    --color-accent: #0891b2;
+
+    /* ボタンのホバー時 */
+    --color-primary-hover: color-mix(in oklab, var(--color-primary) 82%, white);
+
+    /* バッジや淡い背景 */
+    --color-primary-soft: color-mix(in oklab, var(--color-primary) 12%, white);
+    --color-primary-soft-fg: color-mix(in oklab, var(--color-primary) 78%, black);
+
+    /* 本文中のリンク色（背景が明るい前提） */
+    --color-primary-text: var(--color-primary);
+}
+
+/* 暗いモードでは淡色とリンク色だけ明るい側へ寄せる */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-primary-soft: color-mix(in oklab, var(--color-primary) 32%, black);
+        --color-primary-soft-fg: color-mix(in oklab, var(--color-primary) 30%, white);
+        --color-primary-text: color-mix(in oklab, var(--color-primary) 55%, white);
+    }
+}

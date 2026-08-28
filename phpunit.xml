@@ -30,7 +30,7 @@
         <env name="DB_CONNECTION" value="pgsql"/>
         <env name="DB_HOST" value="db"/>
         <env name="DB_PORT" value="5432"/>
-        <env name="DB_DATABASE" value="business_template_testing"/>
+        <env name="DB_DATABASE" value="reservation_yoga_testing"/>
         <env name="DB_USERNAME" value="app"/>
         <env name="DB_PASSWORD" value="secret"/>
         <env name="DB_URL" value=""/>

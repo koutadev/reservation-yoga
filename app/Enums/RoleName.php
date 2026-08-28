@@ -19,12 +19,16 @@ enum RoleName: string
     /** 閲覧者: 参照のみ */
     case Viewer = 'viewer';
 
+    /** 会員: 空き枠を見て予約・キャンセル・キャンセル待ちができる */
+    case Member = 'member';
+
     public function label(): string
     {
         return match ($this) {
             self::Admin => '管理者',
             self::Staff => '担当者',
             self::Viewer => '閲覧者',
+            self::Member => '会員',
         };
     }
 
@@ -38,15 +42,22 @@ enum RoleName: string
         return match ($this) {
             self::Admin => PermissionName::cases(),
 
+            // 講師・運営: 枠の開講と予約状況の把握
             self::Staff => [
                 PermissionName::DashboardView,
                 PermissionName::MasterView,
                 PermissionName::MasterManage,
+                PermissionName::ReservationManage,
             ],
 
             self::Viewer => [
                 PermissionName::DashboardView,
                 PermissionName::MasterView,
+            ],
+
+            // 会員: 管理画面には入れず、予約まわりだけができる
+            self::Member => [
+                PermissionName::ReservationBook,
             ],
         };
     }

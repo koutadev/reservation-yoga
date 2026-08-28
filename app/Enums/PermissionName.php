@@ -30,6 +30,12 @@ enum PermissionName: string
     /** 操作ログを閲覧する */
     case ActivityLogView = 'activity_log.view';
 
+    /** 会員として予約する(空き枠の閲覧・予約・キャンセル・キャンセル待ち) */
+    case ReservationBook = 'reservation.book';
+
+    /** 予約状況を管理側として把握する */
+    case ReservationManage = 'reservation.manage';
+
     public function label(): string
     {
         return match ($this) {
@@ -38,6 +44,8 @@ enum PermissionName: string
             self::MasterManage => 'マスタ管理',
             self::UserManage => 'ユーザー管理',
             self::ActivityLogView => '操作ログ閲覧',
+            self::ReservationBook => '予約する(会員)',
+            self::ReservationManage => '予約状況の管理',
         };
     }
 

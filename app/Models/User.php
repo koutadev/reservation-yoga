@@ -9,6 +9,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -60,5 +61,25 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->hasRole(RoleName::Admin->value);
+    }
+
+    /**
+     * 会員としての予約。
+     *
+     * @return HasMany<Reservation, $this>
+     */
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    /**
+     * 会員としてのキャンセル待ち。
+     *
+     * @return HasMany<Waitlist, $this>
+     */
+    public function waitlists(): HasMany
+    {
+        return $this->hasMany(Waitlist::class);
     }
 }

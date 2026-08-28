@@ -15,7 +15,7 @@ services:
         # Linux で権限がずれる場合は `UID=$(id -u) GID=$(id -g) docker compose build`
         UID: ${UID:-1000}
         GID: ${GID:-1000}
-    container_name: lbt-app
+    container_name: yoga-app
     restart: unless-stopped
     volumes:
       - .:/var/www/html
@@ -30,7 +30,7 @@ services:
 
   web:
     image: nginx:1.27-alpine
-    container_name: lbt-web
+    container_name: yoga-web
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8080}:80"
@@ -44,10 +44,10 @@ services:
 
   db:
     image: postgres:16-alpine
-    container_name: lbt-db
+    container_name: yoga-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-business_template}
+      POSTGRES_DB: ${DB_DATABASE:-reservation_yoga}
       POSTGRES_USER: ${DB_USERNAME:-app}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
       TZ: Asia/Tokyo
@@ -58,7 +58,7 @@ services:
       # 初回起動時にテスト用データベース(<DB_DATABASE>_testing)を作成する
       - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-app} -d ${DB_DATABASE:-business_template}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-app} -d ${DB_DATABASE:-reservation_yoga}"]
       interval: 5s
       timeout: 5s
       retries: 10

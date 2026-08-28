@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>オンラインヨガ予約システム モックアップ提案資料</title>
+<style>
+:root{
+  --coral:#E1542E; --coral-dark:#9E3A1C; --coral-soft:#FBEAE2;
+  --mint:#12A67C; --mint-dark:#0B6E52; --mint-soft:#E2F5EE;
+  --amber:#D98A17; --amber-dark:#855009; --amber-soft:#FBEEDA;
+  --blue:#2E77C2; --blue-dark:#1B4E86; --blue-soft:#E7F0FA;
+  --ink:#2B2723; --muted:#7C746C; --faint:#A79F97;
+  --line:#ECE6E0; --bg:#FBF9F7; --card:#FFFFFF;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;}
+h1,h2,h3{font-weight:600;}
+.wrap{max-width:1120px;margin:0 auto;padding:24px 20px 64px;}
+
+/* ヘッダー */
+.topbar{background:var(--card);border-bottom:1px solid var(--line);}
+.topbar-inner{max-width:1120px;margin:0 auto;padding:16px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand .logo{width:32px;height:32px;border-radius:9px;background:var(--coral);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;}
+.brand .name{font-size:16px;font-weight:600;}
+.brand .sub{font-size:12px;color:var(--muted);}
+.tag{margin-left:auto;font-size:12px;color:var(--amber-dark);background:var(--amber-soft);border:1px solid #F0D9A6;padding:5px 12px;border-radius:20px;}
+
+/* タブ */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:22px 0 26px;}
+.tab{font-size:13px;padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:var(--card);
+  color:var(--muted);cursor:pointer;transition:.15s;}
+.tab:hover{border-color:#DAD2CA;color:var(--ink);}
+.tab.active{background:var(--coral);border-color:var(--coral);color:#fff;}
+.tab .grp{font-size:11px;color:var(--faint);margin-right:4px;}
+.tab.active .grp{color:#F7CDBD;}
+
+.screen{display:none;}
+.screen.active{display:block;}
+.screen-lead{font-size:13px;color:var(--muted);margin-bottom:20px;max-width:640px;}
+.screen-lead b{color:var(--ink);font-weight:600;}
+
+/* スマホフレーム */
+.phones{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;background:#F4EFEA;border-radius:18px;padding:26px 18px;}
+.phone{width:300px;background:var(--card);border-radius:30px;border:1px solid var(--line);overflow:hidden;
+  box-shadow:0 8px 28px rgba(60,45,35,.08);display:flex;flex-direction:column;min-height:600px;}
+.p-cap{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;}
+.p-head{background:var(--coral);padding:16px 18px;color:#fff;display:flex;align-items:center;gap:10px;}
+.p-head .eyebrow{font-size:11px;color:var(--coral-soft);}
+.p-head .ttl{font-size:16px;font-weight:600;}
+.p-body{padding:16px 16px 18px;flex:1;}
+.back{font-size:18px;line-height:1;}
+
+/* 日付チップ */
+.datebar{display:flex;gap:7px;margin-bottom:14px;}
+.dchip{flex:1;text-align:center;border:1px solid var(--line);border-radius:11px;padding:8px 0;color:var(--muted);}
+.dchip .dow{font-size:11px;}
+.dchip .day{font-size:16px;font-weight:600;}
+.dchip.on{background:var(--coral);border-color:var(--coral);color:#fff;}
+
+/* レッスンカード */
+.lcard{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:11px;}
+.lcard .row{display:flex;justify-content:space-between;align-items:center;}
+.lcard .time{font-size:12px;color:var(--muted);}
+.lcard .title{font-size:15px;font-weight:600;margin:5px 0 3px;}
+.lcard .inst{font-size:12px;color:var(--muted);}
+.lcard.full{opacity:.9;}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.b-open{background:var(--mint-soft);color:var(--mint-dark);}
+.b-personal{background:var(--coral-soft);color:var(--coral-dark);}
+.b-full{background:#F2EEEA;color:var(--faint);}
+.b-wait{background:var(--amber-soft);color:var(--amber-dark);}
+.b-confirm{background:var(--mint-soft);color:var(--mint-dark);}
+.link-wait{font-size:12px;color:var(--coral-dark);}
+
+/* 詳細 */
+.detail-meta{border-top:1px solid var(--line);padding-top:14px;margin-top:14px;display:flex;flex-direction:column;gap:12px;}
+.dm{display:flex;justify-content:space-between;font-size:14px;}
+.dm .k{color:var(--muted);}
+.dm .v{font-weight:500;}
+.dm .v.hi{color:var(--mint-dark);font-weight:600;}
+.cta-bar{border-top:1px solid var(--line);padding:14px 16px;}
+.cta{background:var(--coral);color:#fff;text-align:center;border-radius:13px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;}
+.cta.ghost{background:#fff;color:var(--coral);border:1.5px solid var(--coral);}
+.desc{font-size:13px;color:var(--muted);margin-top:10px;}
+
+/* マイ予約 */
+.sec-label{font-size:11px;color:var(--faint);letter-spacing:.06em;margin:6px 0 9px;}
+.rcard{border:1px solid var(--line);border-radius:0 13px 13px 0;padding:11px 14px;margin-bottom:11px;}
+.rcard.confirm{border-left:3px solid var(--mint);}
+.rcard.wait{border-left:3px solid var(--amber);}
+.rcard.done{opacity:.65;border-left:3px solid var(--line);}
+.rcard .online{font-size:12px;color:var(--blue-dark);margin-top:4px;}
+
+/* PC / 管理 共通 */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0;overflow:hidden;}
+.panel-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.panel-head .pt{font-size:15px;font-weight:600;}
+.pill{font-size:12px;padding:5px 12px;border-radius:8px;border:1px solid var(--line);color:var(--muted);background:#fff;cursor:pointer;}
+.pill.on{background:var(--coral);border-color:var(--coral);color:#fff;}
+.spacer{margin-left:auto;}
+.btn{font-size:13px;padding:8px 14px;border-radius:9px;border:none;background:var(--coral);color:#fff;cursor:pointer;font-weight:500;}
+.btn.sub{background:#fff;color:var(--ink);border:1px solid var(--line);}
+
+/* PCカレンダー */
+.cal{display:grid;grid-template-columns:56px repeat(4,1fr);}
+.cal .ch{padding:10px 8px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);text-align:center;background:#FBF8F5;}
+.cal .ch.day{font-weight:600;color:var(--ink);}
+.cal .ch.day span{display:block;font-size:11px;color:var(--faint);font-weight:400;}
+.cal .tcol{padding:10px 6px;font-size:11px;color:var(--faint);text-align:right;border-right:1px solid var(--line);border-bottom:1px solid var(--line);}
+.cal .cell{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;min-height:64px;}
+.slot{border-radius:8px;padding:6px 8px;font-size:11px;margin-bottom:5px;cursor:pointer;line-height:1.4;}
+.slot.open{background:var(--mint-soft);color:var(--mint-dark);}
+.slot.personal{background:var(--coral-soft);color:var(--coral-dark);}
+.slot.full{background:#F2EEEA;color:var(--faint);}
+.slot .st{font-weight:600;}
+
+/* 管理: KPI */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+.kpi .lb{font-size:12px;color:var(--muted);}
+.kpi .nm{font-size:24px;font-weight:700;margin-top:4px;}
+.kpi .nm small{font-size:13px;font-weight:400;color:var(--muted);}
+.kpi .dl{font-size:11px;margin-top:3px;}
+.up{color:var(--mint-dark);} .warn{color:var(--amber-dark);}
+
+/* 管理テーブル */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{text-align:left;font-size:12px;color:var(--muted);font-weight:500;padding:11px 14px;border-bottom:1px solid var(--line);background:#FBF8F5;white-space:nowrap;}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#FCFAF8;}
+.num{text-align:right;font-variant-numeric:tabular-nums;}
+.mini{font-size:11px;padding:2px 9px;border-radius:6px;}
+.m-open{background:var(--mint-soft);color:var(--mint-dark);}
+.m-full{background:#F2EEEA;color:var(--faint);}
+.m-close{background:var(--coral-soft);color:var(--coral-dark);}
+.gauge{height:7px;border-radius:4px;background:#F0EBE6;overflow:hidden;width:96px;display:inline-block;vertical-align:middle;}
+.gauge > span{display:block;height:100%;background:var(--mint);}
+.gauge.hi > span{background:var(--coral);}
+.rowact{color:var(--coral-dark);font-size:12px;cursor:pointer;}
+.foot-note{font-size:12px;color:var(--faint);margin-top:22px;text-align:center;}
+
+@media(max-width:520px){
+  .kpis{grid-template-columns:repeat(2,1fr);}
+  .cal{font-size:11px;}
+  .table-scroll{overflow-x:auto;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="logo">Y</div>
+      <div>
+        <div class="name">オンラインヨガ 予約システム</div>
+        <div class="sub">画面モックアップ 提案資料</div>
+      </div>
+    </div>
+    <div class="tag">モックアップ ／ ダミーデータ（実際には動作しません）</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-s="s1"><span class="grp">会員</span>空き枠一覧（スマホ）</button>
+    <button class="tab" data-s="s2"><span class="grp">会員</span>レッスン詳細・予約</button>
+    <button class="tab" data-s="s3"><span class="grp">会員</span>マイ予約</button>
+    <button class="tab" data-s="s4"><span class="grp">会員</span>空き枠一覧（PC・カレンダー）</button>
+    <button class="tab" data-s="s5"><span class="grp">管理</span>予約状況ダッシュボード</button>
+    <button class="tab" data-s="s6"><span class="grp">管理</span>レッスン枠管理</button>
+  </div>
+
+  <!-- S1 会員 空き枠一覧 スマホ -->
+  <section class="screen active" id="s1">
+    <p class="screen-lead"><b>モバイルファースト</b>。日付を切り替えて、その日の空き枠をリストで確認。残り枠はミント、個人レッスンはコーラル、満席はキャンセル待ちへ誘導。</p>
+    <div class="phones">
+      <div>
+        <div class="phone">
+          <div class="p-head">
+            <div><div class="eyebrow">こんにちは、ゆいさん</div><div class="ttl">レッスンを探す</div></div>
+          </div>
+          <div class="p-body">
+            <div class="datebar">
+              <div class="dchip on"><div class="dow">火</div><div class="day">27</div></div>
+              <div class="dchip"><div class="dow">水</div><div class="day">28</div></div>
+              <div class="dchip"><div class="dow">木</div><div class="day">29</div></div>
+              <div class="dchip"><div class="dow">金</div><div class="day">30</div></div>
+            </div>
+            <div class="lcard">
+              <div class="row"><span class="time">7:00 – 7:45</span><span class="badge b-open">残り3</span></div>
+              <div class="title">朝のリセットヨガ</div>
+              <div class="inst">田中 みき</div>
+            </div>
+            <div class="lcard">
+              <div class="row"><span class="time">12:00 – 12:30</span><span class="badge b-personal">個人</span></div>
+              <div class="title">パーソナル調整</div>
+              <div class="inst">佐藤 けん</div>
+            </div>
+            <div class="lcard">
+              <div class="row"><span class="time">18:30 – 19:15</span><span class="badge b-open">残り6</span></div>
+              <div class="title">はじめてのヨガ</div>
+              <div class="inst">田中 みき</div>
+            </div>
+            <div class="lcard full">
+              <div class="row"><span class="time">20:00 – 20:45</span><span class="badge b-full">満席</span></div>
+              <div class="title">夜のリラックス</div>
+              <div class="link-wait">キャンセル待ちに登録 →</div>
+            </div>
+          </div>
+        </div>
+        <div class="p-cap">日付切替 ＋ 空き枠リスト</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S2 会員 詳細・予約 -->
+  <section class="screen" id="s2">
+    <p class="screen-lead">レッスンの<b>日時・講師・残り枠・形式</b>を一目で。下部の<b>固定CTA</b>で片手予約。満席時はキャンセル待ちボタンに切り替わる。</p>
+    <div class="phones">
+      <div>
+        <div class="phone">
+          <div class="p-head"><span class="back">‹</span><div class="ttl">レッスン詳細</div></div>
+          <div class="p-body">
+            <span class="badge b-open">グループ</span>
+            <div class="title" style="font-size:19px;font-weight:600;margin:12px 0 4px;">朝のリセットヨガ</div>
+            <p class="desc">呼吸を整え、一日を軽やかに始める45分。初心者歓迎。</p>
+            <div class="detail-meta">
+              <div class="dm"><span class="k">日時</span><span class="v">8/27(火) 7:00 – 7:45</span></div>
+              <div class="dm"><span class="k">講師</span><span class="v">田中 みき</span></div>
+              <div class="dm"><span class="k">残り枠</span><span class="v hi">3 / 10</span></div>
+              <div class="dm"><span class="k">形式</span><span class="v">オンライン（Zoom）</span></div>
+              <div class="dm"><span class="k">キャンセル期限</span><span class="v">開始2時間前まで</span></div>
+            </div>
+          </div>
+          <div class="cta-bar"><div class="cta">予約する</div></div>
+        </div>
+        <div class="p-cap">空きあり：予約する</div>
+      </div>
+      <div>
+        <div class="phone">
+          <div class="p-head"><span class="back">‹</span><div class="ttl">レッスン詳細</div></div>
+          <div class="p-body">
+            <span class="badge b-full">満席</span>
+            <div class="title" style="font-size:19px;font-weight:600;margin:12px 0 4px;">夜のリラックス</div>
+            <p class="desc">一日の緊張をほどく、就寝前の45分。</p>
+            <div class="detail-meta">
+              <div class="dm"><span class="k">日時</span><span class="v">8/27(火) 20:00 – 20:45</span></div>
+              <div class="dm"><span class="k">講師</span><span class="v">佐藤 けん</span></div>
+              <div class="dm"><span class="k">残り枠</span><span class="v" style="color:var(--faint);">0 / 8</span></div>
+              <div class="dm"><span class="k">キャンセル待ち</span><span class="v">現在 2 名</span></div>
+            </div>
+          </div>
+          <div class="cta-bar"><div class="cta ghost">キャンセル待ちに登録</div></div>
+        </div>
+        <div class="p-cap">満席：キャンセル待ち</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S3 マイ予約 -->
+  <section class="screen" id="s3">
+    <p class="screen-lead">自分の<b>予約中・キャンセル待ち・履歴</b>を確認。空きが出たらキャンセル待ちが自動で繰り上がる。予約中はオンライン参加への導線。</p>
+    <div class="phones">
+      <div>
+        <div class="phone">
+          <div class="p-head"><div class="ttl">マイ予約</div></div>
+          <div class="p-body">
+            <div class="sec-label">予約中</div>
+            <div class="rcard confirm">
+              <div class="row"><span class="time">8/27(火) 7:00</span><span class="badge b-confirm">確定</span></div>
+              <div class="title">朝のリセットヨガ</div>
+              <div class="online">▶ オンラインで参加する</div>
+            </div>
+            <div class="sec-label">キャンセル待ち</div>
+            <div class="rcard wait">
+              <div class="row"><span class="time">8/27(火) 20:00</span><span class="badge b-wait">待ち 2番</span></div>
+              <div class="title">夜のリラックス</div>
+              <div class="inst" style="font-size:12px;color:var(--muted);margin-top:3px;">空きが出たら繰り上げます</div>
+            </div>
+            <div class="sec-label">履歴</div>
+            <div class="rcard done">
+              <div class="row"><span class="time">8/20(火) 7:00</span><span class="badge" style="color:var(--faint);">受講済み</span></div>
+              <div class="title">朝のリセットヨガ</div>
+            </div>
+            <div class="rcard done">
+              <div class="row"><span class="time">8/18(日) 10:00</span><span class="badge" style="color:var(--faint);">受講済み</span></div>
+              <div class="title">週末フローヨガ</div>
+            </div>
+          </div>
+        </div>
+        <div class="p-cap">予約中 / 待ち / 履歴</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S4 PC カレンダー -->
+  <section class="screen" id="s4">
+    <p class="screen-lead">PC幅では<b>カレンダーグリッド</b>で週の空き枠を俯瞰。同じデータを、スマホ＝リスト／PC＝カレンダーで最適表示（レスポンシブ）。</p>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="pt">今週のレッスン</span>
+        <span class="pill on">週表示</span><span class="pill">日表示</span>
+        <div class="spacer"></div>
+        <span class="pill">‹ 前の週</span><span class="pill">8/25 – 8/31</span><span class="pill">次の週 ›</span>
+      </div>
+      <div class="cal">
+        <div class="ch"></div>
+        <div class="ch day">火 <span>8/27</span></div>
+        <div class="ch day">水 <span>8/28</span></div>
+        <div class="ch day">木 <span>8/29</span></div>
+        <div class="ch day">金 <span>8/30</span></div>
+
+        <div class="tcol">7:00</div>
+        <div class="cell"><div class="slot open"><span class="st">朝のリセット</span> 残3</div></div>
+        <div class="cell"></div>
+        <div class="cell"><div class="slot open"><span class="st">朝のリセット</span> 残5</div></div>
+        <div class="cell"></div>
+
+        <div class="tcol">12:00</div>
+        <div class="cell"><div class="slot personal"><span class="st">パーソナル</span> 個人</div></div>
+        <div class="cell"><div class="slot personal"><span class="st">パーソナル</span> 個人</div></div>
+        <div class="cell"></div>
+        <div class="cell"><div class="slot personal"><span class="st">パーソナル</span> 個人</div></div>
+
+        <div class="tcol">18:30</div>
+        <div class="cell"><div class="slot open"><span class="st">はじめて</span> 残6</div></div>
+        <div class="cell"><div class="slot open"><span class="st">フローヨガ</span> 残2</div></div>
+        <div class="cell"><div class="slot open"><span class="st">はじめて</span> 残8</div></div>
+        <div class="cell"><div class="slot full"><span class="st">フローヨガ</span> 満席</div></div>
+
+        <div class="tcol">20:00</div>
+        <div class="cell"><div class="slot full"><span class="st">夜リラックス</span> 満席</div></div>
+        <div class="cell"><div class="slot open"><span class="st">夜リラックス</span> 残4</div></div>
+        <div class="cell"><div class="slot open"><span class="st">夜リラックス</span> 残1</div></div>
+        <div class="cell"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S5 管理ダッシュボード -->
+  <section class="screen" id="s5">
+    <p class="screen-lead"><b>運用重視・高密度</b>。当日の稼働・予約・キャンセル待ちを数値で把握し、埋まり具合を一目で。管理側は効率を優先したトーン。</p>
+    <div class="kpis">
+      <div class="kpi"><div class="lb">本日のレッスン</div><div class="nm">8<small> 枠</small></div><div class="dl">開講中 6 / 締切 2</div></div>
+      <div class="kpi"><div class="lb">本日の予約</div><div class="nm">54<small> 件</small></div><div class="dl up">▲ 前週比 +12%</div></div>
+      <div class="kpi"><div class="lb">平均稼働率</div><div class="nm">78<small>%</small></div><div class="dl up">目標 75% 達成</div></div>
+      <div class="kpi"><div class="lb">キャンセル待ち</div><div class="nm">7<small> 名</small></div><div class="dl warn">満席 2 枠で発生中</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span class="pt">本日の枠一覧（8/27 火）</span><div class="spacer"></div><span class="pill on">本日</span><span class="pill">今週</span></div>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>時間</th><th>レッスン</th><th>講師</th><th>形式</th><th class="num">予約 / 定員</th><th>稼働</th><th>待ち</th><th>状態</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>7:00</td><td>朝のリセットヨガ</td><td>田中 みき</td><td>グループ</td><td class="num">7 / 10</td><td><span class="gauge"><span style="width:70%"></span></span></td><td>—</td><td><span class="mini m-open">開講</span></td><td class="rowact">詳細</td></tr>
+          <tr><td>12:00</td><td>パーソナル調整</td><td>佐藤 けん</td><td>個人</td><td class="num">1 / 1</td><td><span class="gauge hi"><span style="width:100%"></span></span></td><td>—</td><td><span class="mini m-full">満席</span></td><td class="rowact">詳細</td></tr>
+          <tr><td>18:30</td><td>はじめてのヨガ</td><td>田中 みき</td><td>グループ</td><td class="num">4 / 12</td><td><span class="gauge"><span style="width:33%"></span></span></td><td>—</td><td><span class="mini m-open">開講</span></td><td class="rowact">詳細</td></tr>
+          <tr><td>20:00</td><td>夜のリラックス</td><td>佐藤 けん</td><td>グループ</td><td class="num">8 / 8</td><td><span class="gauge hi"><span style="width:100%"></span></span></td><td>2</td><td><span class="mini m-full">満席</span></td><td class="rowact">詳細</td></tr>
+          <tr><td>21:00</td><td>おやすみ前ストレッチ</td><td>山本 あや</td><td>グループ</td><td class="num">0 / 10</td><td><span class="gauge"><span style="width:0%"></span></span></td><td>—</td><td><span class="mini m-close">締切</span></td><td class="rowact">詳細</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- S6 管理 レッスン枠管理 -->
+  <section class="screen" id="s6">
+    <p class="screen-lead">レッスン枠の<b>開講・編集・定員・オンラインURL</b>を管理。一覧から検索・絞り込みし、行から編集。新規開講はコーラルのCTAで。</p>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="pt">レッスン枠管理</span>
+        <span class="pill">講師：すべて</span><span class="pill">形式：すべて</span><span class="pill on">今後の枠</span>
+        <div class="spacer"></div>
+        <button class="btn">＋ 枠を開講</button>
+      </div>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>コード</th><th>日時</th><th>レッスン</th><th>講師</th><th>形式</th><th class="num">定員</th><th class="num">予約</th><th>URL</th><th>状態</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>LSN-2026-0142</td><td>8/27(火) 7:00</td><td>朝のリセットヨガ</td><td>田中 みき</td><td>グループ</td><td class="num">10</td><td class="num">7</td><td style="color:var(--blue-dark);">設定済</td><td><span class="mini m-open">開講</span></td><td class="rowact">編集</td></tr>
+          <tr><td>LSN-2026-0143</td><td>8/27(火) 12:00</td><td>パーソナル調整</td><td>佐藤 けん</td><td>個人</td><td class="num">1</td><td class="num">1</td><td style="color:var(--blue-dark);">設定済</td><td><span class="mini m-full">満席</span></td><td class="rowact">編集</td></tr>
+          <tr><td>LSN-2026-0144</td><td>8/27(火) 20:00</td><td>夜のリラックス</td><td>佐藤 けん</td><td>グループ</td><td class="num">8</td><td class="num">8</td><td style="color:var(--blue-dark);">設定済</td><td><span class="mini m-full">満席</span></td><td class="rowact">編集</td></tr>
+          <tr><td>LSN-2026-0145</td><td>8/28(水) 7:00</td><td>朝のリセットヨガ</td><td>田中 みき</td><td>グループ</td><td class="num">10</td><td class="num">5</td><td style="color:var(--blue-dark);">設定済</td><td><span class="mini m-open">開講</span></td><td class="rowact">編集</td></tr>
+          <tr><td>LSN-2026-0146</td><td>8/28(水) 18:30</td><td>フローヨガ</td><td>山本 あや</td><td>グループ</td><td class="num">12</td><td class="num">2</td><td style="color:var(--faint);">未設定</td><td><span class="mini m-open">開講</span></td><td class="rowact">編集</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <p class="foot-note">※ 決済・振替・難易度分類・指名などは MVP のスコープ外（拡張点）。MVP 完成後に課題表で管理し、次サイクルで検討します。</p>
+  </section>
+</div>
+
+<script>
+const tabs=document.querySelectorAll('.tab');
+const screens=document.querySelectorAll('.screen');
+tabs.forEach(t=>t.addEventListener('click',()=>{
+  tabs.forEach(x=>x.classList.remove('active'));
+  screens.forEach(s=>s.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.s).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}));
+</script>
+</body>
+</html>

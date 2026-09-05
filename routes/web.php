@@ -3,6 +3,7 @@
 use App\Enums\PermissionName;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Lessons\LessonSlotController;
 use App\Http\Controllers\Masters\DepartmentController;
 use App\Http\Controllers\Masters\EmployeeController;
 use App\Http\Controllers\Masters\MasterHubController;
@@ -67,6 +68,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])
         ->middleware('permission:'.PermissionName::ActivityLogView->value)
         ->name('activity-logs.index');
+
+    // --- レッスン枠(管理/講師) --------------------------------------------
+    // 参照も更新も lesson_slot.manage が必要。staff が「自分の枠だけ」編集できる
+    // 制御は LessonSlotPolicy が持つ(instructors.user_id で判定)。
+    Route::middleware('permission:'.PermissionName::LessonSlotManage->value)
+        ->prefix('lesson-slots')
+        ->name('lesson-slots.')
+        ->group(function () {
+            Route::get('/', [LessonSlotController::class, 'index'])->name('index');
+            Route::get('/export', [LessonSlotController::class, 'export'])->name('export');
+            Route::get('/create', [LessonSlotController::class, 'create'])->name('create');
+            Route::post('/', [LessonSlotController::class, 'store'])->name('store');
+            Route::post('/recurring', [LessonSlotController::class, 'storeRecurring'])->name('store-recurring');
+
+            // 一覧の行クリックで開くモーダルの中身(HTML の断片)
+            Route::get('/{id}/detail', [LessonSlotController::class, 'detail'])
+                ->whereNumber('id')
+                ->name('detail');
+
+            Route::get('/{id}/edit', [LessonSlotController::class, 'edit'])
+                ->whereNumber('id')
+                ->name('edit');
+
+            Route::put('/{id}', [LessonSlotController::class, 'update'])
+                ->whereNumber('id')
+                ->name('update');
+        });
 
     // --- 共通マスタ -------------------------------------------------------
     // 一覧 / CSV は master.view、登録・編集・削除・復元は master.manage が必要

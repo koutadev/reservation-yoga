@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\LessonSlotStatus;
 use App\Enums\LessonType;
 use App\Enums\ReservationStatus;
+use App\Enums\WaitlistStatus;
 use App\Models\Concerns\HasYearlySequentialCode;
 use Database\Factories\LessonSlotFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,6 +32,7 @@ use Illuminate\Support\Carbon;
  * @property int $capacity
  * @property string|null $online_url
  * @property LessonSlotStatus $status
+ * @property-read int|null $reserved_count 一覧で withCount したときだけ入る予約数
  * @property-read Instructor|null $instructor
  * @property-read Collection<int, Reservation> $reservations
  * @property-read Collection<int, Waitlist> $waitlists
@@ -107,11 +109,23 @@ class LessonSlot extends BaseModel
     /**
      * 席を占めている予約（予約中・繰上確定）。残枠の計算に使う。
      *
+     * 「席を占めるとはどの状態か」の判断は Reservation の occupying() が唯一の定義元。
+     *
      * @return HasMany<Reservation, $this>
      */
     public function activeReservations(): HasMany
     {
         return $this->reservations()->whereIn('status', ReservationStatus::activeValues());
+    }
+
+    /**
+     * 待機中のキャンセル待ち（待ち順つき）。
+     *
+     * @return HasMany<Waitlist, $this>
+     */
+    public function waitingList(): HasMany
+    {
+        return $this->waitlists()->where('status', WaitlistStatus::Waiting->value)->orderBy('position');
     }
 
     /**
@@ -159,15 +173,52 @@ class LessonSlot extends BaseModel
      */
     public function remainingSeats(): int
     {
-        $reserved = $this->relationLoaded('activeReservations')
-            ? $this->activeReservations->count()
-            : $this->activeReservations()->count();
-
-        return max(0, $this->capacity - $reserved);
+        return max(0, $this->capacity - $this->reservedCount());
     }
 
     public function isFull(): bool
     {
         return $this->remainingSeats() === 0;
+    }
+
+    /**
+     * 席を占めている予約の件数。
+     *
+     * 一覧では withCount('activeReservations as reserved_count') で先に数えておく。
+     * 枠側に予約数を保持しないので、どちらの経路でも都度数えることになる。
+     */
+    public function reservedCount(): int
+    {
+        $counted = $this->getAttribute('reserved_count');
+
+        if (is_numeric($counted)) {
+            return (int) $counted;
+        }
+
+        return $this->relationLoaded('activeReservations')
+            ? $this->activeReservations->count()
+            : $this->activeReservations()->count();
+    }
+
+    /**
+     * この枠を編集してよいユーザーか。
+     *
+     * 判定そのものは LessonSlotPolicy が持つ。ここは「自分の枠か」だけを答える。
+     */
+    public function isOwnedBy(User $user): bool
+    {
+        $instructor = $this->relationLoaded('instructor')
+            ? $this->instructor
+            : $this->instructor()->first();
+
+        return $instructor !== null && $instructor->user_id === $user->id;
+    }
+
+    /**
+     * 中止された枠か。
+     */
+    public function isCanceled(): bool
+    {
+        return $this->status === LessonSlotStatus::Canceled;
     }
 }

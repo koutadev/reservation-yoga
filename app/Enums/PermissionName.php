@@ -33,6 +33,9 @@ enum PermissionName: string
     /** 会員として予約する(空き枠の閲覧・予約・キャンセル・キャンセル待ち) */
     case ReservationBook = 'reservation.book';
 
+    /** レッスン枠を開講・編集する(管理/講師) */
+    case LessonSlotManage = 'lesson_slot.manage';
+
     /** 予約状況を管理側として把握する */
     case ReservationManage = 'reservation.manage';
 
@@ -45,6 +48,7 @@ enum PermissionName: string
             self::UserManage => 'ユーザー管理',
             self::ActivityLogView => '操作ログ閲覧',
             self::ReservationBook => '予約する(会員)',
+            self::LessonSlotManage => 'レッスン枠の開講・編集',
             self::ReservationManage => '予約状況の管理',
         };
     }

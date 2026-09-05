@@ -47,6 +47,7 @@ enum RoleName: string
                 PermissionName::DashboardView,
                 PermissionName::MasterView,
                 PermissionName::MasterManage,
+                PermissionName::LessonSlotManage,
                 PermissionName::ReservationManage,
             ],
 

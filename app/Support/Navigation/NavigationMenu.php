@@ -36,6 +36,10 @@ class NavigationMenu
                 ),
             ]),
 
+            new NavSection('レッスン', [
+                new NavItem('レッスン枠', 'lesson-slots.index', 'calendar', PermissionName::LessonSlotManage, 'lesson-slots.*'),
+            ]),
+
             // 個々のマスタはハブ(マスタ管理)から入る。
             // ナビには出さないが、現在地のハイライトとパンくずのために定義は残す。
             new NavSection('マスタ', [

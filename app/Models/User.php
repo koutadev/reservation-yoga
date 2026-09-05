@@ -53,6 +53,18 @@ class User extends Authenticatable
     }
 
     /**
+     * このユーザーが担当するインストラクター(任意)。
+     *
+     * staff ロールの利用者が「自分の枠」だけを編集できるようにするための紐付け。
+     *
+     * @return HasOne<Instructor, $this>
+     */
+    public function instructor(): HasOne
+    {
+        return $this->hasOne(Instructor::class);
+    }
+
+    /**
      * 管理者かどうか。
      *
      * 削除済みマスタの表示 / 復元など、権限(master.view / master.manage)では

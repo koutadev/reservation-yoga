@@ -14,6 +14,7 @@ use App\Models\Reminder;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Waitlist;
+use App\Support\Lessons\RecurringSlots;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -31,13 +32,29 @@ use Illuminate\Support\Facades\Hash;
  */
 class YogaSampleSeeder extends Seeder
 {
-    /** インストラクター: [氏名, プロフィール] */
+    /** インストラクター: [氏名, プロフィール, ログインするユーザーのメール(任意)] */
     private const INSTRUCTORS = [
-        ['佐倉 みなと', 'RYT200 取得。呼吸を整えるベーシックなクラスを担当。オンライン指導歴 5 年。'],
-        ['如月 あかり', 'アシュタンガ・パワーヨガ担当。運動量のあるクラスで体を動かしたい方向け。'],
-        ['南 ひなた', 'マタニティ・リラックスヨガ担当。はじめての方や、休息を取りたい方に。'],
-        ['白石 かえで', 'ピラティス出身。姿勢改善・肩こり向けのパーソナルレッスンが中心。'],
+        // 講師・運営(staff)としてログインし、自分の枠だけを編集できることを確かめられるようにする
+        ['佐倉 みなと', 'RYT200 取得。呼吸を整えるベーシックなクラスを担当。オンライン指導歴 5 年。', 'staff@example.com'],
+        ['如月 あかり', 'アシュタンガ・パワーヨガ担当。運動量のあるクラスで体を動かしたい方向け。', null],
+        ['南 ひなた', 'マタニティ・リラックスヨガ担当。はじめての方や、休息を取りたい方に。', null],
+        ['白石 かえで', 'ピラティス出身。姿勢改善・肩こり向けのパーソナルレッスンが中心。', null],
     ];
+
+    /**
+     * 定期スケジュール: [レッスン名, 講師の番号, 曜日(0=日〜6=土), 開始, 終了, 定員]
+     *
+     * 繰り返し登録(RecurringSlots)にそのまま渡す。実際の教室の週次スケジュールに近い形。
+     */
+    private const WEEKLY_SCHEDULE = [
+        ['朝のベーシックヨガ', 0, [2, 4], '07:30', '08:15', 12],   // 毎週 火・木の朝
+        ['夜のリラックスヨガ', 2, [3], '20:00', '21:00', 12],       // 毎週 水の夜
+        ['パワーヨガ（中級）', 1, [1, 5], '20:00', '21:00', 8],     // 毎週 月・金の夜
+        ['肩こり改善ヨガ', 0, [6], '10:00', '10:45', 10],           // 毎週 土の午前
+    ];
+
+    /** 定期スケジュールを流し込む週数 */
+    private const WEEKS_AHEAD = 6;
 
     /** レッスンのメニュー: [レッスン名, 所要分, 定員] */
     private const LESSONS = [
@@ -92,6 +109,8 @@ class YogaSampleSeeder extends Seeder
         return collect(self::INSTRUCTORS)->map(fn (array $row): Instructor => Instructor::create([
             'name' => $row[0],
             'profile' => $row[1],
+            // 講師本人がログインする場合は users と紐付ける(自分の枠だけ編集できるようにするため)
+            'user_id' => $row[2] === null ? null : User::firstWhere('email', $row[2])?->id,
             'is_active' => true,
         ]));
     }
@@ -123,9 +142,11 @@ class YogaSampleSeeder extends Seeder
     }
 
     /**
-     * これから 2 週間ぶんの枠。
+     * これからの枠。
      *
-     * 平日は朝・夜の 2 本、土日は朝 1 本。加えてマンツーマンを数本混ぜる。
+     * 定期スケジュール（毎週の固定クラス）は繰り返し登録（RecurringSlots）で作り、
+     * マンツーマンや単発のクラスはそのあとに 1 件ずつ足す。
+     * 画面から「繰り返しで開講 → 個別に調整」した状態と同じデータになる。
      *
      * @param  Collection<int, Instructor>  $instructors
      * @return Collection<int, LessonSlot>
@@ -135,36 +156,50 @@ class YogaSampleSeeder extends Seeder
         $slots = collect();
         $day = Carbon::today();
 
-        for ($offset = 1; $offset <= 14; $offset++) {
-            $date = $day->copy()->addDays($offset);
-            $isWeekend = $date->isWeekend();
+        // 定期スケジュール（毎週火・木の朝ヨガ、水の夜クラス など）
+        $from = $day->copy()->addDay();
+        $to = $day->copy()->addWeeks(self::WEEKS_AHEAD);
 
-            // 朝のクラス
-            $slots->push($this->slot(
-                $instructors[$offset % $instructors->count()],
-                self::LESSONS[$offset % 3],
-                $date->copy()->setTime(7, 30),
-            ));
+        foreach (self::WEEKLY_SCHEDULE as $row) {
+            [$title, $instructorIndex, $weekdays, $startTime, $endTime, $capacity] = $row;
 
-            if (! $isWeekend) {
-                // 夜のクラス
-                $slots->push($this->slot(
-                    $instructors[($offset + 1) % $instructors->count()],
-                    self::LESSONS[($offset + 1) % count(self::LESSONS)],
-                    $date->copy()->setTime(20, 0),
-                ));
-            }
+            $instructor = $instructors[$instructorIndex];
 
-            // 3 日おきにマンツーマン（定員 1 名）
-            if ($offset % 3 === 0) {
-                $slots->push($this->slot(
-                    $instructors[3],
-                    ['パーソナルヨガ（姿勢改善）', 60, 1],
-                    $date->copy()->setTime(19, 0),
-                    LessonType::Personal,
-                ));
-            }
+            $result = RecurringSlots::generate(
+                attributes: [
+                    'instructor_id' => $instructor->id,
+                    'title' => $title,
+                    'lesson_type' => LessonType::Group,
+                    'capacity' => $capacity,
+                    'online_url' => 'https://example.com/meet/'.strtolower($instructor->code).'-weekly',
+                    'status' => LessonSlotStatus::Open,
+                ],
+                weekdays: $weekdays,
+                from: $from,
+                to: $to,
+                startTime: $startTime,
+                endTime: $endTime,
+            );
+
+            $slots = $slots->concat($result->created);
         }
+
+        // 単発の枠：マンツーマン（定員 1 名）を数本
+        for ($offset = 3; $offset <= 21; $offset += 6) {
+            $slots->push($this->slot(
+                $instructors[3],
+                ['パーソナルヨガ（姿勢改善）', 60, 1],
+                $day->copy()->addDays($offset)->setTime(19, 0),
+                LessonType::Personal,
+            ));
+        }
+
+        // 単発の枠：期間限定のクラス
+        $slots->push($this->slot(
+            $instructors[2],
+            self::LESSONS[4],
+            $day->copy()->addDays(9)->setTime(13, 0),
+        ));
 
         // 中止になった枠も 1 本混ぜておく
         $slots->push($this->slot(

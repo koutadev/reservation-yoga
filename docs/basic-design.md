@@ -50,6 +50,7 @@
 
 ```mermaid
 erDiagram
+    users ||--o| instructors : "講師のログイン(任意)"
     users ||--o{ reservations : "会員が予約"
     users ||--o{ waitlists : "会員がキャンセル待ち"
     instructors ||--o{ lesson_slots : "講師が担当"
@@ -69,6 +70,7 @@ erDiagram
         string code UK "INS-0001"
         string name
         text profile
+        bigint user_id FK "UK, null可(講師のログインユーザー)"
         boolean is_active
     }
     lesson_slots {
@@ -140,7 +142,7 @@ erDiagram
 
 共通基盤のロールを踏襲・拡張。
 - **admin**：全操作、マスタ管理、全予約の把握・調整、削除済み表示/復元。
-- **staff（講師/運営）**：自身の枠の開講・編集、予約状況の把握。
+- **staff（講師/運営）**：自身の枠の開講・編集、予約状況の把握。「自身の枠」は `instructors.user_id` の紐付けで判定するため、インストラクター管理（admin のみ）でログインユーザーを紐付けて運用する。
 - **member（会員）**：空き枠閲覧、予約・キャンセル・キャンセル待ち、マイ予約。
 
 ## 9. UI/UX 設計方針（モバイルファースト）

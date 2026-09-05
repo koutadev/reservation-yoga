@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Lessons\LessonSlotController;
 use App\Http\Controllers\Masters\DepartmentController;
 use App\Http\Controllers\Masters\EmployeeController;
+use App\Http\Controllers\Masters\InstructorController;
 use App\Http\Controllers\Masters\MasterHubController;
 use App\Http\Controllers\Masters\OrganizationController;
 use App\Http\Controllers\Masters\PartnerController;
@@ -103,6 +104,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [MasterHubController::class, 'index'])
             ->middleware('permission:'.PermissionName::MasterView->value)
             ->name('index');
+
+        // 講師マスタだけは管理者限定(instructor.manage)。ここで講師とユーザーを紐付ける
+        MasterRoutes::register(
+            'instructors',
+            InstructorController::class,
+            'instructors',
+            PermissionName::InstructorManage,
+            PermissionName::InstructorManage,
+        );
 
         MasterRoutes::register('organizations', OrganizationController::class, 'organizations');
         MasterRoutes::register('employees', EmployeeController::class, 'employees');

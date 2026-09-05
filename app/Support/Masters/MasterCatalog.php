@@ -2,13 +2,16 @@
 
 namespace App\Support\Masters;
 
+use App\Enums\PermissionName;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Instructor;
 use App\Models\Organization;
 use App\Models\Partner;
 use App\Models\Position;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +32,17 @@ class MasterCatalog
     public function cards(): array
     {
         return [
+            new MasterCard(
+                key: 'instructors',
+                label: '講師',
+                description: 'レッスンを担当するインストラクター。ログインユーザーと紐付けると、その講師が自分の枠を編集できます。',
+                icon: 'employees',
+                routeName: 'masters.instructors',
+                modelClass: Instructor::class,
+                // 講師マスタは管理者だけが扱う
+                viewPermission: PermissionName::InstructorManage,
+                managePermission: PermissionName::InstructorManage,
+            ),
             new MasterCard(
                 key: 'organizations',
                 label: '組織',
@@ -98,6 +112,26 @@ class MasterCatalog
         return array_values(array_filter(
             $this->cards(),
             static fn (MasterCard $card): bool => Route::has($card->routeName.'.index'),
+        ));
+    }
+
+    /**
+     * このユーザーが開けるカードだけを返す。
+     *
+     * マスタごとに必要な権限が違う場合(管理者だけが扱う講師マスタなど)に、
+     * 開けない入口をハブに出さないための絞り込み。
+     *
+     * @return list<MasterCard>
+     */
+    public function visibleCards(?User $user): array
+    {
+        if ($user === null) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $this->availableCards(),
+            static fn (MasterCard $card): bool => $user->can($card->viewPermission()->value),
         ));
     }
 

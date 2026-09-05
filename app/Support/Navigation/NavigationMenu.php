@@ -44,6 +44,7 @@ class NavigationMenu
             // ナビには出さないが、現在地のハイライトとパンくずのために定義は残す。
             new NavSection('マスタ', [
                 new NavItem('マスタ管理', 'masters.index', 'masters', PermissionName::MasterView, 'masters.index'),
+                new NavItem('講師', 'masters.instructors.index', 'employees', PermissionName::InstructorManage, 'masters.instructors.*', hidden: true),
                 new NavItem('組織', 'masters.organizations.index', 'departments', PermissionName::MasterView, 'masters.organizations.*', hidden: true),
                 new NavItem('社員', 'masters.employees.index', 'employees', PermissionName::MasterView, 'masters.employees.*', hidden: true),
                 new NavItem('取引先', 'masters.partners.index', 'partners', PermissionName::MasterView, 'masters.partners.*', hidden: true),

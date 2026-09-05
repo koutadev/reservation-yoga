@@ -49,6 +49,7 @@ class YogaSampleSeeder extends Seeder
     private const WEEKLY_SCHEDULE = [
         ['朝のベーシックヨガ', 0, [2, 4], '07:30', '08:15', 12],   // 毎週 火・木の朝
         ['夜のリラックスヨガ', 2, [3], '20:00', '21:00', 12],       // 毎週 水の夜
+        ['おやすみ前ストレッチ', 1, [3], '20:00', '21:00', 10],     // 水の夜は 2 クラス並行(カレンダーで上下に積まれる)
         ['パワーヨガ（中級）', 1, [1, 5], '20:00', '21:00', 8],     // 毎週 月・金の夜
         ['肩こり改善ヨガ', 0, [6], '10:00', '10:45', 10],           // 毎週 土の午前
     ];
@@ -63,6 +64,7 @@ class YogaSampleSeeder extends Seeder
         ['パワーヨガ（中級）', 60, 8],
         ['肩こり改善ヨガ', 45, 10],
         ['マタニティヨガ', 45, 6],
+        ['ランチタイムヨガ', 30, 10],
     ];
 
     /** 会員: [氏名, メール] */
@@ -77,6 +79,10 @@ class YogaSampleSeeder extends Seeder
         ['加藤 早苗', 'sanae.kato@example.com'],
         ['吉田 拓海', 'takumi.yoshida@example.com'],
         ['山本 千尋', 'chihiro.yamamoto@example.com'],
+        ['森 奈々', 'nana.mori@example.com'],
+        ['岡田 涼太', 'ryota.okada@example.com'],
+        ['松本 遥', 'haruka.matsumoto@example.com'],
+        ['清水 芽衣', 'mei.shimizu@example.com'],
     ];
 
     public function run(): void
@@ -201,7 +207,16 @@ class YogaSampleSeeder extends Seeder
             $day->copy()->addDays(9)->setTime(13, 0),
         ));
 
-        // 中止になった枠も 1 本混ぜておく
+        // 受付を締め切った枠（会員の一覧には出るが予約はできない。DEC-016）
+        $slots->push($this->slot(
+            $instructors[1],
+            self::LESSONS[5],
+            $day->copy()->addDays(2)->setTime(12, 0),
+            LessonType::Group,
+            LessonSlotStatus::Closed,
+        ));
+
+        // 中止になった枠も 1 本混ぜておく（こちらは一覧に出さない）
         $slots->push($this->slot(
             $instructors[2],
             self::LESSONS[4],
@@ -247,18 +262,20 @@ class YogaSampleSeeder extends Seeder
      */
     private function createReservations(Collection $slots, Collection $members): void
     {
-        $open = $slots->filter(
-            static fn (LessonSlot $slot): bool => $slot->status === LessonSlotStatus::Open
+        // 中止の枠には予約を入れない（締切の枠は、締め切る前に入った予約として埋める）
+        $reservable = $slots->filter(
+            static fn (LessonSlot $slot): bool => $slot->status !== LessonSlotStatus::Canceled
         )->values();
 
-        foreach ($open as $index => $slot) {
+        foreach ($reservable as $index => $slot) {
             $capacity = $slot->capacity;
 
-            // 3 枠に 1 つは満席、次の 1 つは残りわずか、残りは少しだけ埋める
-            $count = match ($index % 3) {
-                0 => $capacity,                       // 満席
-                1 => max(1, $capacity - 1),           // 残り 1
-                default => (int) floor($capacity / 3),
+            // 空きあり / 残りわずか / 満席 がどの週にも混ざるように、4 通りを順に回す
+            $count = match ($index % 4) {
+                0 => $capacity,                        // 満席
+                1 => max(1, $capacity - 1),            // 残りわずか
+                2 => (int) floor($capacity / 3),       // 空きあり
+                default => (int) floor($capacity / 2), // 空きあり（半分ほど）
             };
 
             $reserved = $members->slice(0, min($count, $members->count()));
@@ -277,8 +294,8 @@ class YogaSampleSeeder extends Seeder
                 ]);
             }
 
-            // 満席の枠にはキャンセル待ちを 2 名
-            if ($count >= $capacity) {
+            // 満席の枠にはキャンセル待ちを 2 名（受付中の枠だけ）
+            if ($count >= $capacity && $slot->status === LessonSlotStatus::Open) {
                 $waiting = $members->slice($capacity, 2)->values();
 
                 foreach ($waiting as $position => $member) {

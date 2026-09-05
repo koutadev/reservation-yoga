@@ -221,4 +221,12 @@ class LessonSlot extends BaseModel
     {
         return $this->status === LessonSlotStatus::Canceled;
     }
+
+    /**
+     * 締切（受付終了）の枠か。開催はするので会員の一覧にも出す（DEC-016）。
+     */
+    public function isClosed(): bool
+    {
+        return $this->status === LessonSlotStatus::Closed;
+    }
 }

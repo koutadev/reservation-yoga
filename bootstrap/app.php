@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Navigation\HomeRoute;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // spatie/laravel-permission のミドルウェアエイリアス
         //   Route::get(...)->middleware('role:admin');
         //   Route::get(...)->middleware('permission:activity_log.view');
+        // ログイン済みで /login などを開いたときの行き先(会員はレッスン一覧)
+        $middleware->redirectUsersTo(fn (Request $request): string => HomeRoute::for($request->user()));
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,

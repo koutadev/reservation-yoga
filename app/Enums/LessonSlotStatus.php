@@ -32,6 +32,19 @@ enum LessonSlotStatus: string
     }
 
     /**
+     * 会員の空き枠一覧に出す状態（DEC-016）。
+     *
+     * 締切は開催するので一覧に出し「受付終了」として見せる。
+     * 中止は探す対象ではないため一覧から外す（予約済み会員のマイ予約には残す）。
+     *
+     * @return list<string>
+     */
+    public static function browsableValues(): array
+    {
+        return [self::Open->value, self::Closed->value];
+    }
+
+    /**
      * 新しい予約を受け付ける状態か。
      */
     public function acceptsReservation(): bool

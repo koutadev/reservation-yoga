@@ -13,6 +13,7 @@ use App\Http\Controllers\Masters\PartnerController;
 use App\Http\Controllers\Masters\PositionController;
 use App\Http\Controllers\Masters\ProductCategoryController;
 use App\Http\Controllers\Masters\ProductController;
+use App\Http\Controllers\Members\LessonBrowseController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavedViewController;
 use App\Http\Controllers\UserController;
@@ -95,6 +96,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/{id}', [LessonSlotController::class, 'update'])
                 ->whereNumber('id')
                 ->name('update');
+        });
+
+    // --- 空き枠の閲覧(会員) ------------------------------------------------
+    // 会員(reservation.book)が、これからのレッスンを見る画面。
+    // 一覧はスマホ=日付切替リスト / PC=週カレンダーを幅で出し分ける(同じデータ)。
+    // 予約の確定・キャンセル待ちの登録は STEP4 / STEP5。
+    Route::middleware('permission:'.PermissionName::ReservationBook->value)
+        ->prefix('lessons')
+        ->name('lessons.')
+        ->group(function () {
+            Route::get('/', [LessonBrowseController::class, 'index'])->name('index');
+
+            Route::get('/{id}', [LessonBrowseController::class, 'show'])
+                ->whereNumber('id')
+                ->name('show');
         });
 
     // --- 共通マスタ -------------------------------------------------------

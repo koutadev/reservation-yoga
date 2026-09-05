@@ -2,26 +2,26 @@
 
 namespace App\Http\Controllers\Members;
 
-use App\Http\Controllers\Controller;
 use App\Models\LessonSlot;
 use App\Models\Reservation;
-use App\Models\User;
 use App\Support\Reservations\BookingDenied;
+use App\Support\Reservations\CancellationDenied;
 use App\Support\Reservations\ReservationBooking;
+use App\Support\Reservations\ReservationCancellation;
 use App\Support\Ui\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * 予約の確定（会員）。
+ * 予約の確定とキャンセル（会員）。
  *
- * 受け付けられるかどうかの判断は ReservationBooking が持つ（枠の行ロック +
- * 確定時の再判定）。ここはその結果を画面に返すだけにしている。
+ * 受け付けられるかどうかの判断は ReservationBooking / ReservationCancellation が
+ * 持つ（枠の行ロック + 確定時の再判定）。ここはその結果を画面に返すだけにしている。
  *
- * キャンセルとキャンセル待ちは STEP5、マイ予約は STEP6。
+ * 予約の一覧（マイ予約）は STEP6。いまは各レッスンの詳細画面から操作する。
  */
-class ReservationController extends Controller
+class ReservationController extends MemberController
 {
     /**
      * 予約する。
@@ -64,12 +64,30 @@ class ReservationController extends Controller
         ]);
     }
 
-    private function member(Request $request): User
+    /**
+     * 予約をキャンセルする。
+     *
+     * 空いた席は、同じトランザクションの中でキャンセル待ちの先頭へ回る。
+     */
+    public function destroy(Request $request, int $id): RedirectResponse
     {
-        $user = $request->user();
+        $user = $this->member($request);
 
-        abort_unless($user instanceof User, 403);
+        $reservation = Reservation::query()->findOrFail($id);
 
-        return $user;
+        // 自分の予約以外はキャンセルできない
+        abort_unless($reservation->user_id === $user->id, 403);
+
+        try {
+            $result = ReservationCancellation::cancel($reservation);
+        } catch (CancellationDenied $denied) {
+            return redirect()
+                ->route('lessons.show', $reservation->lesson_slot_id)
+                ->with(Toast::SESSION_KEY, Toast::error($denied->getMessage()));
+        }
+
+        return redirect()
+            ->route('lessons.show', $reservation->lesson_slot_id)
+            ->with(Toast::SESSION_KEY, Toast::success($result->message()));
     }
 }

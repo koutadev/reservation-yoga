@@ -100,26 +100,11 @@ final class ReservationBooking
     }
 
     /**
-     * 時間帯の重なる別の枠を予約していないか。
-     *
-     * 重なりは「開始 < 相手の終了 かつ 終了 > 相手の開始」で判定する。
-     * 10:00–11:00 と 11:00–12:00 のように境界が一致するだけの隣接は重複としない。
+     * 時間帯の重なる別の枠を予約していないか（判定は TimeConflict が持つ）。
      */
     private static function assertNoTimeConflict(LessonSlot $slot, User $user): void
     {
-        $conflicts = Reservation::query()
-            ->occupying()
-            ->where('user_id', $user->id)
-            ->whereHas('lessonSlot', function ($query) use ($slot): void {
-                $query->whereKeyNot($slot->id)
-                    // 中止になった枠の予約は連鎖キャンセル済みだが、念のため除いておく
-                    ->where('status', '!=', LessonSlotStatus::Canceled->value)
-                    ->where('starts_at', '<', $slot->ends_at)
-                    ->where('ends_at', '>', $slot->starts_at);
-            })
-            ->exists();
-
-        if ($conflicts) {
+        if (TimeConflict::existsFor($slot, $user->id)) {
             throw BookingDenied::because(BookingDenial::TimeConflict);
         }
     }

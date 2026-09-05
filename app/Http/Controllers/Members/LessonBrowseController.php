@@ -9,8 +9,10 @@ use App\Models\Instructor;
 use App\Models\LessonSlot;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Models\Waitlist;
 use App\Support\Lessons\SlotAvailability;
 use App\Support\Lessons\WeekCalendar;
+use App\Support\Reservations\ReservationCancellation;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -51,8 +53,9 @@ class LessonBrowseController extends Controller
         return view('members.lessons.index', [
             'calendar' => $calendar,
             'daySlots' => $calendar->slotsOn($selectedDate),
-            // 予約済みの枠は、一覧でもそれと分かるようにする
+            // 予約済み・キャンセル待ちの枠は、一覧でもそれと分かるようにする
             'reservedSlotIds' => $this->reservedSlotIds($request->user(), $slots),
+            'waitingSlotIds' => $this->waitingSlotIds($request->user(), $slots),
             'selectedDate' => $selectedDate,
             'today' => $today,
             // 絞り込みは日付・週を移動しても引き継ぐ
@@ -81,15 +84,21 @@ class LessonBrowseController extends Controller
             ->findOrFail($id);
 
         $availability = SlotAvailability::of($slot);
-        $reservation = $this->reservationOf($request->user(), $slot);
+        $user = $request->user();
+
+        $reservation = $this->reservationOf($user, $slot);
+        $waitlist = $this->waitlistOf($user, $slot);
+        $waitingRank = $waitlist === null ? null : $this->waitingRank($slot, $waitlist);
 
         return view('members.lessons.show', [
             'slot' => $slot,
             'availability' => $availability,
             'reservation' => $reservation,
+            'waitlist' => $waitlist,
+            'waitingRank' => $waitingRank,
             'waitingCount' => $slot->waitingList()->count(),
-            'cancelDeadlineHours' => (int) config('reservation.cancel_deadline_hours', 2),
-            'booking' => $this->bookingState($slot, $availability, $reservation !== null),
+            'cancelDeadlineHours' => ReservationCancellation::deadlineHours(),
+            'booking' => $this->memberState($slot, $availability, $reservation, $waitlist, $waitingRank),
         ]);
     }
 
@@ -117,6 +126,27 @@ class LessonBrowseController extends Controller
     }
 
     /**
+     * この週の枠のうち、その会員がキャンセル待ちに並んでいるもの。
+     *
+     * @param  Collection<int, LessonSlot>  $slots
+     * @return list<int>
+     */
+    private function waitingSlotIds(?User $user, Collection $slots): array
+    {
+        if ($user === null || $slots->isEmpty()) {
+            return [];
+        }
+
+        return Waitlist::query()
+            ->waiting()
+            ->where('user_id', $user->id)
+            ->whereIn('lesson_slot_id', $slots->modelKeys())
+            ->pluck('lesson_slot_id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
+    }
+
+    /**
      * その会員のこの枠の予約（席を占めているもの）。
      */
     private function reservationOf(?User $user, LessonSlot $slot): ?Reservation
@@ -126,6 +156,32 @@ class LessonBrowseController extends Controller
         }
 
         return $slot->activeReservations()->where('user_id', $user->id)->first();
+    }
+
+    /**
+     * その会員のこの枠のキャンセル待ち（待機中のもの）。
+     */
+    private function waitlistOf(?User $user, LessonSlot $slot): ?Waitlist
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        return $slot->waitlists()->waiting()->where('user_id', $user->id)->first();
+    }
+
+    /**
+     * いま何番目に待っているか。
+     *
+     * position は採番した番号なので、前の人が繰り上がると実際の順番とずれる。
+     * 会員には「いま何番目か」を出す。
+     */
+    private function waitingRank(LessonSlot $slot, Waitlist $waitlist): int
+    {
+        return $slot->waitlists()
+            ->waiting()
+            ->where('position', '<', $waitlist->position)
+            ->count() + 1;
     }
 
     /**
@@ -218,36 +274,83 @@ class LessonBrowseController extends Controller
     }
 
     /**
-     * 詳細画面の受付状況（予約ボタンの見せ方）。
+     * 詳細画面で、その会員に出す操作。
      *
-     * これは表示のための下ごしらえで、予約できるかどうかの結論ではない。
+     * これは表示のための下ごしらえで、受け付けられるかどうかの結論ではない。
      * 実際に受け付けるかは、送信を受けたときに枠をロックして数え直す
-     * （ReservationBooking）。画面を開いたまま満席になることがあるため。
+     * （ReservationBooking / ReservationCancellation / WaitlistRegistration）。
+     * 画面を開いたまま満席になることも、期限を過ぎることもあるため。
      *
-     * @return array{label: string, note: string, bookable: bool}
+     * action は画面に出すボタンの種類。
+     *   reserve  … 予約する
+     *   waitlist … キャンセル待ちに並ぶ
+     *   cancel   … 予約をキャンセルする
+     *   withdraw … キャンセル待ちを取り消す
+     *   null     … 押せる操作がない（理由を note に出す）
+     *
+     * @return array{action: string|null, label: string, note: string}
      */
-    private function bookingState(LessonSlot $slot, SlotAvailability $availability, bool $reserved): array
-    {
+    private function memberState(
+        LessonSlot $slot,
+        SlotAvailability $availability,
+        ?Reservation $reservation,
+        ?Waitlist $waitlist,
+        ?int $waitingRank,
+    ): array {
+        $deadlineHours = ReservationCancellation::deadlineHours();
+
         if ($slot->isCanceled()) {
-            return ['label' => '中止になりました', 'note' => 'このレッスンは開催されません。', 'bookable' => false];
+            return ['action' => null, 'label' => '中止になりました', 'note' => 'このレッスンは開催されません。'];
         }
 
-        if ($reserved) {
-            return ['label' => '予約済み', 'note' => 'このレッスンは予約済みです。', 'bookable' => false];
+        if ($reservation !== null) {
+            if ($slot->starts_at->isPast()) {
+                return ['action' => null, 'label' => '予約済み', 'note' => 'このレッスンは終了しました。'];
+            }
+
+            if (! ReservationCancellation::isWithinDeadline($slot)) {
+                return [
+                    'action' => null,
+                    'label' => '予約済み',
+                    'note' => 'キャンセル期限（開始 '.$deadlineHours.' 時間前）を過ぎています。',
+                ];
+            }
+
+            return [
+                'action' => 'cancel',
+                'label' => '予約をキャンセルする',
+                'note' => 'キャンセルは開始 '.$deadlineHours.' 時間前まで受け付けます。',
+            ];
+        }
+
+        if ($waitlist !== null) {
+            if ($slot->starts_at->isPast()) {
+                return ['action' => null, 'label' => 'キャンセル待ち', 'note' => 'このレッスンは終了しました。'];
+            }
+
+            return [
+                'action' => 'withdraw',
+                'label' => 'キャンセル待ちを取り消す',
+                'note' => '現在 '.$waitingRank.' 番目です。空きが出たら順にご案内します。',
+            ];
         }
 
         if ($slot->starts_at->isPast()) {
-            return ['label' => '終了しました', 'note' => 'このレッスンはすでに終了しています。', 'bookable' => false];
+            return ['action' => null, 'label' => '終了しました', 'note' => 'このレッスンはすでに終了しています。'];
         }
 
         if ($slot->isClosed()) {
-            return ['label' => '受付終了', 'note' => 'このレッスンは受付を終了しました（開催はします）。', 'bookable' => false];
+            return ['action' => null, 'label' => '受付終了', 'note' => 'このレッスンは受付を終了しました（開催はします）。'];
         }
 
         if ($availability->isFull()) {
-            return ['label' => 'キャンセル待ちに登録', 'note' => '満席です。キャンセル待ちの登録は準備中です。', 'bookable' => false];
+            return [
+                'action' => 'waitlist',
+                'label' => 'キャンセル待ちに登録',
+                'note' => '満席です。空きが出たら、キャンセル待ちの先頭から繰り上げます。',
+            ];
         }
 
-        return ['label' => '予約する', 'note' => '', 'bookable' => true];
+        return ['action' => 'reserve', 'label' => '予約する', 'note' => ''];
     }
 }

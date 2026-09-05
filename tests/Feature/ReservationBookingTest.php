@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Concerns\MakesReservations;
 use Tests\TestCase;
 
 /**
@@ -31,6 +32,7 @@ use Tests\TestCase;
  */
 class ReservationBookingTest extends TestCase
 {
+    use MakesReservations;
     use RefreshDatabase;
 
     private const NOW = '2026-09-08 09:00:00';
@@ -47,40 +49,6 @@ class ReservationBookingTest extends TestCase
         Carbon::setTestNow();
 
         parent::tearDown();
-    }
-
-    private function member(): User
-    {
-        $user = User::factory()->create();
-        $user->assignRole(RoleName::Member->value);
-
-        return $user;
-    }
-
-    /**
-     * @param  array<string, mixed>  $attributes
-     */
-    private function slot(string $startsAt, string $endsAt, array $attributes = []): LessonSlot
-    {
-        return LessonSlot::factory()->create(array_merge([
-            'starts_at' => Carbon::parse($startsAt),
-            'ends_at' => Carbon::parse($endsAt),
-            'capacity' => 5,
-        ], $attributes));
-    }
-
-    /**
-     * 席を占める予約で枠を埋める。
-     */
-    private function fill(LessonSlot $slot, int $count): void
-    {
-        for ($i = 0; $i < $count; $i++) {
-            Reservation::factory()->create([
-                'lesson_slot_id' => $slot->id,
-                'user_id' => $this->member()->id,
-                'status' => ReservationStatus::Reserved,
-            ]);
-        }
     }
 
     private function assertDeniedWith(BookingDenial $reason, LessonSlot $slot, User $user): void

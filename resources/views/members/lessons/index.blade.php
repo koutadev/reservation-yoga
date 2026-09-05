@@ -112,7 +112,9 @@
 
         <div class="space-y-2.5">
             @forelse ($daySlots as $slot)
-                <x-lesson.card :lesson="$slot" :reserved="in_array($slot->id, $reservedSlotIds, true)" />
+                <x-lesson.card :lesson="$slot"
+                               :reserved="in_array($slot->id, $reservedSlotIds, true)"
+                               :waiting="in_array($slot->id, $waitingSlotIds, true)" />
             @empty
                 <p class="rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400">
                     この日のレッスンはありません。ほかの日を選んでください。
@@ -154,7 +156,8 @@
                                 {{-- 同じ日・同じ時刻に複数あるときは上下に積む --}}
                                 @foreach ($cell as $slot)
                                     <x-lesson.gauge-slot :lesson="$slot"
-                                                         :reserved="in_array($slot->id, $reservedSlotIds, true)" />
+                                                         :reserved="in_array($slot->id, $reservedSlotIds, true)"
+                                                         :waiting="in_array($slot->id, $waitingSlotIds, true)" />
                                 @endforeach
                             </div>
                         @endforeach

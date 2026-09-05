@@ -15,6 +15,7 @@ use App\Http\Controllers\Masters\ProductCategoryController;
 use App\Http\Controllers\Masters\ProductController;
 use App\Http\Controllers\Members\LessonBrowseController;
 use App\Http\Controllers\Members\ReservationController;
+use App\Http\Controllers\Members\WaitlistController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavedViewController;
 use App\Http\Controllers\UserController;
@@ -115,11 +116,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/{id}/reserve', [ReservationController::class, 'store'])
                 ->whereNumber('id')
                 ->name('reserve');
+
+            // 満席の枠に並ぶ(空きが出たら先頭から繰り上げる)
+            Route::post('/{id}/waitlist', [WaitlistController::class, 'store'])
+                ->whereNumber('id')
+                ->name('waitlist');
         });
 
         Route::get('/reservations/{id}/complete', [ReservationController::class, 'complete'])
             ->whereNumber('id')
             ->name('reservations.complete');
+
+        // キャンセル(期限内のみ)。空いた席はキャンセル待ちの先頭へ回る
+        Route::delete('/reservations/{id}', [ReservationController::class, 'destroy'])
+            ->whereNumber('id')
+            ->name('reservations.cancel');
+
+        Route::delete('/waitlists/{id}', [WaitlistController::class, 'destroy'])
+            ->whereNumber('id')
+            ->name('waitlists.cancel');
     });
 
     // --- 共通マスタ -------------------------------------------------------

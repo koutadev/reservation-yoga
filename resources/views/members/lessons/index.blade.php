@@ -152,7 +152,7 @@
                         </div>
 
                         @foreach ($row['cells'] as $index => $cell)
-                            <div class="flex min-h-24 flex-col gap-1 border-b border-gray-200 p-1 dark:border-gray-700 {{ $index === 6 ? '' : 'border-e' }}">
+                            <div class="flex min-h-20 flex-col gap-1 border-b border-gray-200 p-1 dark:border-gray-700 {{ $index === 6 ? '' : 'border-e' }}">
                                 {{-- 同じ日・同じ時刻に複数あるときは上下に積む --}}
                                 @foreach ($cell as $slot)
                                     <x-lesson.gauge-slot :lesson="$slot"

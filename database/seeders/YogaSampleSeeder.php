@@ -16,6 +16,11 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Waitlist;
 use App\Support\Lessons\RecurringSlots;
+use App\Support\Reminders\ReminderSchedule;
+use App\Support\Reservations\BookingDenied;
+use App\Support\Reservations\ReservationBooking;
+use App\Support\Reservations\ReservationCancellation;
+use App\Support\Reservations\WaitlistRegistration;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -54,6 +59,8 @@ class YogaSampleSeeder extends Seeder
         ['パワーヨガ（中級）', 1, [1, 5], '20:00', '21:00', 8],     // 毎週 月・金の夜
         ['肩こり改善ヨガ', 0, [6], '10:00', '10:45', 10],           // 毎週 土の午前
         ['週末モーニングフロー', 1, [0, 6], '08:30', '09:30', 12], // 毎週 土・日の朝
+        ['やさしいヨガ（初心者向け）', 2, [1, 3, 5], '10:00', '10:45', 12], // 毎週 月・水・金の午前
+        ['マタニティヨガ', 2, [0], '16:00', '16:45', 6],           // 毎週 日の午後
     ];
 
     /** 定期スケジュールを流し込む週数 */
@@ -104,6 +111,12 @@ class YogaSampleSeeder extends Seeder
             $this->createPastSlots($instructors, $members);
 
             $this->createReservations($upcoming, $members);
+
+            // デモ用の会員（member@example.com）に、ひととおりの状態を作る
+            $this->createDemoMemberJourney($instructors, $members, $upcoming);
+
+            // 前日リマインドの送信予定（日次コマンドと同じ処理を通す）
+            ReminderSchedule::scheduleLessonReminders(days: 14);
         } finally {
             config(['activity_log.enabled' => true]);
         }
@@ -324,6 +337,144 @@ class YogaSampleSeeder extends Seeder
                 );
             }
         }
+    }
+
+    /**
+     * デモ用の会員（member@example.com）の状態。
+     *
+     * マイ予約で「予約中 / 繰り上がり / キャンセル待ち / 履歴」がひととおり見えるように、
+     * 実際の予約・キャンセル待ち・繰り上げの処理をそのまま通して作る
+     * （画面から操作した状態と同じデータになる）。
+     *
+     * @param  Collection<int, Instructor>  $instructors
+     * @param  Collection<int, User>  $members
+     * @param  Collection<int, LessonSlot>  $upcoming
+     */
+    private function createDemoMemberJourney(Collection $instructors, Collection $members, Collection $upcoming): void
+    {
+        $demo = User::firstWhere('email', 'member@example.com');
+
+        if ($demo === null) {
+            return;
+        }
+
+        // 繰り上げを先に作る（あとから入れる予約が、繰り上がった枠と時間で
+        // ぶつかった場合は、その枠を飛ばして次の枠を予約する）
+        $this->promoteFromWaitlist($demo, $instructors, $members);
+        $this->bookTwoLessons($demo, $upcoming);
+        $this->joinAnotherWaitlist($demo, $upcoming);
+        $this->addPastLessons($demo);
+    }
+
+    /**
+     * 予約中の例：空きのある枠を 2 本予約する。
+     *
+     * @param  Collection<int, LessonSlot>  $upcoming
+     */
+    private function bookTwoLessons(User $demo, Collection $upcoming): void
+    {
+        $booked = 0;
+
+        foreach ($this->refreshed($upcoming) as $slot) {
+            if ($booked >= 2) {
+                return;
+            }
+
+            try {
+                ReservationBooking::book($slot, $demo);
+                $booked++;
+            } catch (BookingDenied) {
+                // 満席・時間帯の重なりなどは飛ばして次の枠へ
+                continue;
+            }
+        }
+    }
+
+    /**
+     * 繰上確定の例：満席の枠に並び、ほかの会員のキャンセルで繰り上がる。
+     *
+     * デモ会員が確実に繰り上がるよう、この例のためだけの枠を 1 本作る。
+     *
+     * @param  Collection<int, Instructor>  $instructors
+     * @param  Collection<int, User>  $members
+     */
+    private function promoteFromWaitlist(User $demo, Collection $instructors, Collection $members): void
+    {
+        $slot = $this->slot(
+            $instructors[1],
+            ['夜のリラックスヨガ', 60, 4],
+            Carbon::today()->addDays(4)->setTime(20, 30),
+        );
+
+        // 4 名で満席にする
+        foreach ($members->take($slot->capacity) as $member) {
+            $this->reserve($slot, $member, ReservationStatus::Reserved, now()->subDays(2));
+        }
+
+        WaitlistRegistration::join($slot, $demo);
+
+        // 先に予約していた会員が 1 名キャンセル → 待ち行列の先頭（デモ会員）が繰り上がる
+        $reservation = $slot->activeReservations()->orderBy('id')->first();
+
+        if ($reservation !== null) {
+            ReservationCancellation::cancel($reservation);
+        }
+    }
+
+    /**
+     * キャンセル待ちの例：満席の枠にもう 1 本並んでおく。
+     *
+     * @param  Collection<int, LessonSlot>  $upcoming
+     */
+    private function joinAnotherWaitlist(User $demo, Collection $upcoming): void
+    {
+        foreach ($this->refreshed($upcoming) as $slot) {
+            try {
+                WaitlistRegistration::join($slot, $demo);
+
+                return;
+            } catch (BookingDenied) {
+                // 空きがある枠・予約済みの枠は並べないので次へ
+                continue;
+            }
+        }
+    }
+
+    /**
+     * 履歴の例：過去に受けたレッスンを何本か（日をばらけさせる）。
+     */
+    private function addPastLessons(User $demo): void
+    {
+        $past = LessonSlot::query()
+            ->where('starts_at', '<', now())
+            ->withCount('activeReservations as reserved_count')
+            ->orderByDesc('starts_at')
+            ->limit(12)
+            ->get()
+            // 定員はここでも超えない（当日の朝など、すでに満席の枠がある）
+            ->filter(static fn (LessonSlot $slot): bool => $slot->remainingSeats() > 0)
+            ->values()
+            ->filter(static fn (LessonSlot $slot, int $index): bool => $index % 2 === 0)
+            ->take(4);
+
+        foreach ($past as $slot) {
+            $this->reserve($slot, $demo, ReservationStatus::Reserved, $slot->starts_at->copy()->subDays(3));
+        }
+    }
+
+    /**
+     * 予約数を数え直した状態で、開始の早い順に枠を並べる。
+     *
+     * @param  Collection<int, LessonSlot>  $slots
+     * @return Collection<int, LessonSlot>
+     */
+    private function refreshed(Collection $slots): Collection
+    {
+        return LessonSlot::query()
+            ->whereIn('id', $slots->pluck('id'))
+            ->where('starts_at', '>', now()->addDay())
+            ->orderBy('starts_at')
+            ->get();
     }
 
     /**

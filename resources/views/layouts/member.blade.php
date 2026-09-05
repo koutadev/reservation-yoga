@@ -28,7 +28,8 @@
                         <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/20 text-sm font-bold">
                             {{ \App\Support\Theme\Theme::initial() }}
                         </span>
-                        <span class="truncate text-sm font-semibold">{{ \App\Support\Theme\Theme::name() }}</span>
+                        {{-- 幅の狭い端末ではマークだけにして、ナビに場所を譲る --}}
+                        <span class="hidden truncate text-sm font-semibold sm:inline">{{ \App\Support\Theme\Theme::name() }}</span>
                     </a>
 
                     @auth
@@ -40,7 +41,7 @@
                             ] as $link)
                                 <a href="{{ route($link['route']) }}"
                                    @class([
-                                       'rounded-full px-3 py-1.5 transition motion-reduce:transition-none',
+                                       'whitespace-nowrap rounded-full px-2.5 py-1.5 transition motion-reduce:transition-none sm:px-3',
                                        'bg-white/20 font-semibold' => request()->routeIs($link['active']),
                                        'hover:bg-white/10' => ! request()->routeIs($link['active']),
                                    ])>{{ $link['label'] }}</a>

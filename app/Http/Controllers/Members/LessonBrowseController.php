@@ -7,6 +7,8 @@ use App\Enums\LessonType;
 use App\Http\Controllers\Controller;
 use App\Models\Instructor;
 use App\Models\LessonSlot;
+use App\Models\Reservation;
+use App\Models\User;
 use App\Support\Lessons\SlotAvailability;
 use App\Support\Lessons\WeekCalendar;
 use Carbon\CarbonInterface;
@@ -39,10 +41,8 @@ class LessonBrowseController extends Controller
         $selectedDate = $this->selectedDate($request, $today, $instructorId, $lessonType);
         $weekStart = $selectedDate->copy()->startOfWeek(CarbonInterface::SUNDAY);
 
-        $calendar = WeekCalendar::build(
-            $weekStart,
-            $this->weekSlots($weekStart, $instructorId, $lessonType),
-        );
+        $slots = $this->weekSlots($weekStart, $instructorId, $lessonType);
+        $calendar = WeekCalendar::build($weekStart, $slots);
 
         // 前の週へ戻るのは「今日を含む週」まで（過去の枠は会員に出さない）
         $previousWeek = $weekStart->copy()->subWeek();
@@ -51,6 +51,8 @@ class LessonBrowseController extends Controller
         return view('members.lessons.index', [
             'calendar' => $calendar,
             'daySlots' => $calendar->slotsOn($selectedDate),
+            // 予約済みの枠は、一覧でもそれと分かるようにする
+            'reservedSlotIds' => $this->reservedSlotIds($request->user(), $slots),
             'selectedDate' => $selectedDate,
             'today' => $today,
             // 絞り込みは日付・週を移動しても引き継ぐ
@@ -71,7 +73,7 @@ class LessonBrowseController extends Controller
      * 予約・キャンセル待ちの登録は STEP4 / STEP5 で実装するため、
      * ここでは内容と受付状況を見せるところまで。
      */
-    public function show(int $id): View
+    public function show(Request $request, int $id): View
     {
         $slot = LessonSlot::query()
             ->with('instructor')
@@ -79,14 +81,51 @@ class LessonBrowseController extends Controller
             ->findOrFail($id);
 
         $availability = SlotAvailability::of($slot);
+        $reservation = $this->reservationOf($request->user(), $slot);
 
         return view('members.lessons.show', [
             'slot' => $slot,
             'availability' => $availability,
+            'reservation' => $reservation,
             'waitingCount' => $slot->waitingList()->count(),
             'cancelDeadlineHours' => (int) config('reservation.cancel_deadline_hours', 2),
-            'booking' => $this->bookingState($slot, $availability),
+            'booking' => $this->bookingState($slot, $availability, $reservation !== null),
         ]);
+    }
+
+    /**
+     * この週の枠のうち、その会員が予約済みのもの。
+     *
+     * 枠ごとに問い合わせず、1 クエリでまとめて引く。
+     *
+     * @param  Collection<int, LessonSlot>  $slots
+     * @return list<int>
+     */
+    private function reservedSlotIds(?User $user, Collection $slots): array
+    {
+        if ($user === null || $slots->isEmpty()) {
+            return [];
+        }
+
+        return Reservation::query()
+            ->occupying()
+            ->where('user_id', $user->id)
+            ->whereIn('lesson_slot_id', $slots->modelKeys())
+            ->pluck('lesson_slot_id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
+    }
+
+    /**
+     * その会員のこの枠の予約（席を占めているもの）。
+     */
+    private function reservationOf(?User $user, LessonSlot $slot): ?Reservation
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        return $slot->activeReservations()->where('user_id', $user->id)->first();
     }
 
     /**
@@ -181,15 +220,20 @@ class LessonBrowseController extends Controller
     /**
      * 詳細画面の受付状況（予約ボタンの見せ方）。
      *
-     * 予約の確定そのものは STEP4 で実装する。ここでは「なぜ予約できないか」を
-     * 会員に伝えるところまでを持つ。
+     * これは表示のための下ごしらえで、予約できるかどうかの結論ではない。
+     * 実際に受け付けるかは、送信を受けたときに枠をロックして数え直す
+     * （ReservationBooking）。画面を開いたまま満席になることがあるため。
      *
      * @return array{label: string, note: string, bookable: bool}
      */
-    private function bookingState(LessonSlot $slot, SlotAvailability $availability): array
+    private function bookingState(LessonSlot $slot, SlotAvailability $availability, bool $reserved): array
     {
         if ($slot->isCanceled()) {
             return ['label' => '中止になりました', 'note' => 'このレッスンは開催されません。', 'bookable' => false];
+        }
+
+        if ($reserved) {
+            return ['label' => '予約済み', 'note' => 'このレッスンは予約済みです。', 'bookable' => false];
         }
 
         if ($slot->starts_at->isPast()) {
@@ -204,6 +248,6 @@ class LessonBrowseController extends Controller
             return ['label' => 'キャンセル待ちに登録', 'note' => '満席です。キャンセル待ちの登録は準備中です。', 'bookable' => false];
         }
 
-        return ['label' => '予約する', 'note' => '予約の受付は準備中です。', 'bookable' => true];
+        return ['label' => '予約する', 'note' => '', 'bookable' => true];
     }
 }

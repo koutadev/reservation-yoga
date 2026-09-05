@@ -1,4 +1,4 @@
-@props(['lesson'])
+@props(['lesson', 'reserved' => false])
 
 @php
     /** @var \App\Models\LessonSlot $lesson */
@@ -13,7 +13,7 @@
             {{ $lesson->starts_at->format('H:i') }} – {{ $lesson->ends_at->format('H:i') }}
         </span>
 
-        <x-lesson.seat-badge :lesson="$lesson" :availability="$availability" />
+        <x-lesson.seat-badge :lesson="$lesson" :availability="$availability" :reserved="$reserved" />
     </div>
 
     <p class="mt-1.5 font-semibold text-gray-900 dark:text-gray-100">{{ $lesson->title }}</p>

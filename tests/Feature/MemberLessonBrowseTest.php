@@ -387,7 +387,8 @@ class MemberLessonBrowseTest extends TestCase
 
         $many = $this->countQueries(fn () => $this->actingAs($member)->get(route('lessons.index'))->assertOk());
 
-        // 実測は 4 本（ログイン中のユーザー / 最初に開く日 / その週の枠 / 講師の候補）
+        // 実測は 5 本（ログイン中のユーザー / 最初に開く日 / その週の枠 /
+        // その会員の予約済みの枠 / 講師の候補）
         $this->assertSame($few, $many, "枠を増やしたらクエリが増えた（{$few} → {$many}）。");
     }
 
@@ -497,9 +498,9 @@ class MemberLessonBrowseTest extends TestCase
             ->assertSee($slot->code)
             // キャンセル期限は config から（DEC-016）
             ->assertSee('開始 2 時間前まで')
-            // 予約の確定は STEP4。ここではまだ押せない
+            // 予約は詳細画面の CTA から（確定の判定は STEP4 の ReservationBooking）
             ->assertSee('予約する')
-            ->assertSee('予約の受付は準備中です。');
+            ->assertSee(route('lessons.reserve', $slot->id), false);
     }
 
     #[Test]

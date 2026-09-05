@@ -6,9 +6,11 @@
 {{--
     レッスン詳細（会員）。
 
-    予約・キャンセル待ちの登録は STEP4 / STEP5 で実装するため、この画面は
-    「内容と受付状況を見せる」ところまで。下部の固定 CTA はモックアップに合わせて
-    置いてあるが、まだ押せない状態にしてある。
+    下部の固定 CTA から予約する（片手で押せる位置に置く）。押せるかどうかの表示は
+    あくまで下ごしらえで、受け付けるかどうかは送信を受けたサーバが枠をロックして
+    数え直したうえで決める（ReservationBooking）。
+
+    キャンセル待ちの登録は STEP5、マイ予約は STEP6。
 --}}
 <x-member-layout>
     <div class="mx-auto max-w-2xl">
@@ -20,7 +22,7 @@
         <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
             <div class="flex flex-wrap items-center gap-2">
                 <x-badge tone="neutral">{{ $slot->lesson_type->label() }}</x-badge>
-                <x-lesson.seat-badge :lesson="$slot" :availability="$availability" />
+                <x-lesson.seat-badge :lesson="$slot" :availability="$availability" :reserved="$reservation !== null" />
 
                 @if ($slot->isCanceled())
                     <x-badge tone="danger">中止</x-badge>
@@ -80,14 +82,23 @@
             </dl>
         </div>
 
-        {{-- 下部の固定 CTA（モックアップの片手操作の導線）。予約の受付は STEP4 で実装する --}}
+        {{-- 下部の固定 CTA（片手で予約まで届く位置に置く） --}}
         <div class="sticky bottom-0 mt-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <x-button class="w-full" type="button"
-                      :variant="$booking['bookable'] ? 'primary' : 'secondary'" :disabled="true">
-                {{ $booking['label'] }}
-            </x-button>
+            @if ($booking['bookable'])
+                <form method="POST" action="{{ route('lessons.reserve', $slot->id) }}">
+                    @csrf
 
-            <p class="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">{{ $booking['note'] }}</p>
+                    <x-button class="w-full" type="submit">予約する</x-button>
+                </form>
+            @else
+                <x-button class="w-full" type="button" variant="secondary" :disabled="true">
+                    {{ $booking['label'] }}
+                </x-button>
+            @endif
+
+            @if ($booking['note'] !== '')
+                <p class="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">{{ $booking['note'] }}</p>
+            @endif
         </div>
     </div>
 </x-member-layout>

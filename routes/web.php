@@ -4,6 +4,7 @@ use App\Enums\PermissionName;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Lessons\LessonSlotController;
+use App\Http\Controllers\Lessons\ReservationDashboardController;
 use App\Http\Controllers\Masters\DepartmentController;
 use App\Http\Controllers\Masters\EmployeeController;
 use App\Http\Controllers\Masters\InstructorController;
@@ -141,6 +142,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->whereNumber('id')
             ->name('waitlists.cancel');
     });
+
+    // --- 予約状況(管理/講師) ----------------------------------------------
+    // その日の稼働を 1 画面で掴むためのダッシュボード。
+    Route::get('/reservations', [ReservationDashboardController::class, 'index'])
+        ->middleware('permission:'.PermissionName::ReservationManage->value)
+        ->name('reservations.dashboard');
 
     // --- 共通マスタ -------------------------------------------------------
     // 一覧 / CSV は master.view、登録・編集・削除・復元は master.manage が必要

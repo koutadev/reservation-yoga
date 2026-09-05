@@ -53,6 +53,7 @@ class YogaSampleSeeder extends Seeder
         ['おやすみ前ストレッチ', 1, [3], '20:00', '21:00', 10],     // 水の夜は 2 クラス並行(カレンダーで上下に積まれる)
         ['パワーヨガ（中級）', 1, [1, 5], '20:00', '21:00', 8],     // 毎週 月・金の夜
         ['肩こり改善ヨガ', 0, [6], '10:00', '10:45', 10],           // 毎週 土の午前
+        ['週末モーニングフロー', 1, [0, 6], '08:30', '09:30', 12], // 毎週 土・日の朝
     ];
 
     /** 定期スケジュールを流し込む週数 */
@@ -164,7 +165,8 @@ class YogaSampleSeeder extends Seeder
         $day = Carbon::today();
 
         // 定期スケジュール（毎週火・木の朝ヨガ、水の夜クラス など）
-        $from = $day->copy()->addDay();
+        // 当日ぶんも作る（管理のダッシュボードで「本日の稼働」を確認できるように）
+        $from = $day->copy();
         $to = $day->copy()->addWeeks(self::WEEKS_AHEAD);
 
         foreach (self::WEEKLY_SCHEDULE as $row) {

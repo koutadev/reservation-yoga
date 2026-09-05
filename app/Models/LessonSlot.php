@@ -33,6 +33,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $online_url
  * @property LessonSlotStatus $status
  * @property-read int|null $reserved_count 一覧で withCount したときだけ入る予約数
+ * @property-read int|null $waiting_count 一覧で withCount したときだけ入るキャンセル待ち人数
  * @property-read Instructor|null $instructor
  * @property-read Collection<int, Reservation> $reservations
  * @property-read Collection<int, Waitlist> $waitlists

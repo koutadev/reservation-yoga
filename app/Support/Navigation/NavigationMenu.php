@@ -37,6 +37,7 @@ class NavigationMenu
             ]),
 
             new NavSection('レッスン', [
+                new NavItem('予約状況', 'reservations.dashboard', 'dashboard', PermissionName::ReservationManage, 'reservations.*'),
                 new NavItem('レッスン枠', 'lesson-slots.index', 'calendar', PermissionName::LessonSlotManage, 'lesson-slots.*'),
             ]),
 

@@ -69,6 +69,18 @@ enum AvailabilityState: string
     }
 
     /**
+     * 細いゲージ（管理の一覧など）：塗りの色。
+     */
+    public function barClass(): string
+    {
+        return match ($this) {
+            self::Open => 'bg-emerald-500',
+            self::Few => 'bg-amber-500',
+            self::Full => 'bg-rose-500',
+        };
+    }
+
+    /**
      * カレンダーのコマ：残数などの補足文字の色。
      */
     public function metaClass(): string

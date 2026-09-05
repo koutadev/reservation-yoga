@@ -21,7 +21,15 @@
         画面だけを並べ、マスタ・ダッシュボードなど管理側の導線は出さない。
     --}}
     <body class="bg-gray-50 font-sans antialiased dark:bg-gray-900">
-        <div class="flex min-h-screen flex-col">
+        {{--
+            外枠に Alpine のルート(x-data)を置く。
+
+            画面の中のボタンが $dispatch('open-modal', …) でモーダルを開けるのは、
+            そのボタンが Alpine のコンポーネントの中にあるときだけ。ルートが無いと
+            クリックしても何も起きない（キャンセルの確認ダイアログが開かなかった）。
+            管理画面は appShell() が同じ役割を果たしている。
+        --}}
+        <div x-data="{}" class="flex min-h-screen flex-col">
             <header class="sticky top-0 z-30 bg-primary text-white shadow-sm">
                 <div class="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
                     <a href="{{ route('lessons.index') }}" class="flex min-w-0 items-center gap-2">

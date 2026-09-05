@@ -11,7 +11,8 @@ use Illuminate\View\View;
  * マスタ管理のハブ画面。
  *
  * 各マスタへの入口をカードで一覧する。どのマスタがあるかは MasterCatalog が持つ。
- * マスタごとに必要な権限が違うため(講師マスタは管理者のみ)、開けるカードだけを並べる。
+ * マスタごとに必要な権限が違う場合(管理者だけが扱うマスタなど)に備えて、
+ * そのユーザーが開けるカードだけを並べる。
  */
 class MasterHubController extends Controller
 {

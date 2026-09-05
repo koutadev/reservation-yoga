@@ -2,13 +2,12 @@
 
 namespace App\Support\Reservations;
 
-use App\Enums\ReminderChannel;
 use App\Enums\ReservationStatus;
 use App\Enums\WaitlistStatus;
 use App\Models\LessonSlot;
-use App\Models\Reminder;
 use App\Models\Reservation;
 use App\Models\Waitlist;
+use App\Support\Reminders\ReminderSchedule;
 use Illuminate\Database\UniqueConstraintViolationException;
 
 /**
@@ -105,21 +104,10 @@ final class WaitlistPromotion
     }
 
     /**
-     * 繰り上げの連絡を予定として残す。
-     *
-     * 実送信は拡張点。ここでは「いつ・どの予約に・どの手段で送るか」だけを積む
-     * （前日リマインドの生成は STEP6）。
+     * 繰り上げの連絡を予定として残す（実送信は拡張点）。
      */
     private static function scheduleNotice(LessonSlot $slot, Reservation $reservation): void
     {
-        Reminder::create([
-            'lesson_slot_id' => $slot->id,
-            'reservation_id' => $reservation->id,
-            // 繰り上げは早く知らせたいので、送信予定は「いま」
-            'scheduled_at' => now(),
-            'sent_at' => null,
-            'channel' => ReminderChannel::Email,
-            'is_active' => true,
-        ]);
+        ReminderSchedule::promotionNotice($slot, $reservation);
     }
 }

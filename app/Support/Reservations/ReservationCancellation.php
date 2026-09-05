@@ -7,6 +7,7 @@ use App\Enums\LessonSlotStatus;
 use App\Enums\ReservationStatus;
 use App\Models\LessonSlot;
 use App\Models\Reservation;
+use App\Support\Reminders\ReminderSchedule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -46,6 +47,9 @@ final class ReservationCancellation
                 'status' => ReservationStatus::Canceled,
                 'canceled_at' => now(),
             ]);
+
+            // 送るはずだったリマインドは送らない（送信済みの記録は残す）
+            ReminderSchedule::deactivateFor($target->id);
 
             // 空いた 1 席を、待ち行列の先頭から繰り上げられる人へ回す
             $promoted = WaitlistPromotion::promoteOne($slot);

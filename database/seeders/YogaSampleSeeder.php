@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\LessonSlotStatus;
 use App\Enums\LessonType;
 use App\Enums\ReminderChannel;
+use App\Enums\ReminderType;
 use App\Enums\ReservationStatus;
 use App\Enums\RoleName;
 use App\Enums\WaitlistStatus;
@@ -287,6 +288,7 @@ class YogaSampleSeeder extends Seeder
                 Reminder::create([
                     'lesson_slot_id' => $slot->id,
                     'reservation_id' => $reservation->id,
+                    'type' => ReminderType::LessonReminder,
                     'scheduled_at' => $slot->starts_at->copy()->subDay()->setTime(20, 0),
                     'sent_at' => null,
                     'channel' => ReminderChannel::Email,

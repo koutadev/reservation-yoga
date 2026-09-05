@@ -7,6 +7,7 @@ use App\Enums\WaitlistStatus;
 use App\Models\LessonSlot;
 use App\Models\Reservation;
 use App\Models\Waitlist;
+use App\Support\Reminders\ReminderSchedule;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -34,7 +35,7 @@ final class SlotCancellation
 
             $canceledAt = now();
 
-            $reservations = 0;
+            $canceledIds = [];
 
             /** @var Reservation $reservation */
             foreach ($slot->reservations()->occupying()->lockForUpdate()->get() as $reservation) {
@@ -43,8 +44,13 @@ final class SlotCancellation
                     'canceled_at' => $canceledAt,
                 ]);
 
-                $reservations++;
+                $canceledIds[] = $reservation->id;
             }
+
+            // 開催しないので、送るはずだったリマインドも止める
+            ReminderSchedule::deactivateFor($canceledIds);
+
+            $reservations = count($canceledIds);
 
             $waitlists = 0;
 

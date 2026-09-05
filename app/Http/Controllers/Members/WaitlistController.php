@@ -52,8 +52,7 @@ class WaitlistController extends MemberController
 
         WaitlistRegistration::withdraw($waitlist);
 
-        return redirect()
-            ->route('lessons.show', $waitlist->lesson_slot_id)
+        return $this->backToOrigin($request, $waitlist->lesson_slot_id)
             ->with(Toast::SESSION_KEY, Toast::success('キャンセル待ちを取り消しました。'));
     }
 }

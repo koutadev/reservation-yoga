@@ -32,7 +32,22 @@
                     </a>
 
                     @auth
-                        <div class="ms-auto">
+                        {{-- 会員が使う画面は 2 つだけなので、ヘッダーに並べて出す --}}
+                        <nav class="ms-auto flex items-center gap-1 text-xs">
+                            @foreach ([
+                                ['label' => 'レッスンを探す', 'route' => 'lessons.index', 'active' => 'lessons.*'],
+                                ['label' => 'マイ予約', 'route' => 'my-reservations.index', 'active' => 'my-reservations.*'],
+                            ] as $link)
+                                <a href="{{ route($link['route']) }}"
+                                   @class([
+                                       'rounded-full px-3 py-1.5 transition motion-reduce:transition-none',
+                                       'bg-white/20 font-semibold' => request()->routeIs($link['active']),
+                                       'hover:bg-white/10' => ! request()->routeIs($link['active']),
+                                   ])>{{ $link['label'] }}</a>
+                            @endforeach
+                        </nav>
+
+                        <div>
                             <x-dropdown align="right" width="48">
                                 <x-slot name="trigger">
                                     <button type="button"
@@ -50,7 +65,7 @@
                                         <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ auth()->user()->email }}</p>
                                     </div>
 
-                                    <x-dropdown-link :href="route('lessons.index')">レッスンを探す</x-dropdown-link>
+                                    <x-dropdown-link :href="route('my-reservations.index')">マイ予約</x-dropdown-link>
                                     <x-dropdown-link :href="route('profile.edit')">プロフィール</x-dropdown-link>
 
                                     <form method="POST" action="{{ route('logout') }}">

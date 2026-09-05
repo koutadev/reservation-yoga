@@ -14,6 +14,7 @@ use App\Http\Controllers\Masters\PositionController;
 use App\Http\Controllers\Masters\ProductCategoryController;
 use App\Http\Controllers\Masters\ProductController;
 use App\Http\Controllers\Members\LessonBrowseController;
+use App\Http\Controllers\Members\MyReservationController;
 use App\Http\Controllers\Members\ReservationController;
 use App\Http\Controllers\Members\WaitlistController;
 use App\Http\Controllers\ProfileController;
@@ -122,6 +123,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->whereNumber('id')
                 ->name('waitlist');
         });
+
+        // マイ予約(予約中 / キャンセル待ち / 履歴)
+        Route::get('/my/reservations', [MyReservationController::class, 'index'])
+            ->name('my-reservations.index');
 
         Route::get('/reservations/{id}/complete', [ReservationController::class, 'complete'])
             ->whereNumber('id')

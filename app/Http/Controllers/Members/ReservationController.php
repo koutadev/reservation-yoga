@@ -81,13 +81,11 @@ class ReservationController extends MemberController
         try {
             $result = ReservationCancellation::cancel($reservation);
         } catch (CancellationDenied $denied) {
-            return redirect()
-                ->route('lessons.show', $reservation->lesson_slot_id)
+            return $this->backToOrigin($request, $reservation->lesson_slot_id)
                 ->with(Toast::SESSION_KEY, Toast::error($denied->getMessage()));
         }
 
-        return redirect()
-            ->route('lessons.show', $reservation->lesson_slot_id)
+        return $this->backToOrigin($request, $reservation->lesson_slot_id)
             ->with(Toast::SESSION_KEY, Toast::success($result->message()));
     }
 }

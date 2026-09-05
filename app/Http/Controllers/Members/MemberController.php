@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Members;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
@@ -24,5 +25,18 @@ abstract class MemberController extends Controller
         abort_unless($user instanceof User, 403);
 
         return $user;
+    }
+
+    /**
+     * 操作したあとの戻り先。
+     *
+     * キャンセルはマイ予約とレッスン詳細の両方から行えるので、
+     * どちらから来たかをフォームの from で受け取り、その画面に戻す。
+     */
+    protected function backToOrigin(Request $request, int $slotId): RedirectResponse
+    {
+        return $request->input('from') === 'my-reservations'
+            ? redirect()->route('my-reservations.index')
+            : redirect()->route('lessons.show', $slotId);
     }
 }

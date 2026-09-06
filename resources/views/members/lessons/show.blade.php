@@ -91,7 +91,7 @@
         </div>
 
         {{-- 下部の固定 CTA（片手で操作が届く位置に置く） --}}
-        <div class="sticky bottom-0 mt-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <div class="pb-safe sticky bottom-0 mt-4 rounded-2xl border border-gray-200 bg-white px-4 pt-4 dark:border-gray-700 dark:bg-gray-800">
             @switch ($booking['action'])
                 @case ('reserve')
                     <form method="POST" action="{{ route('lessons.reserve', $slot->id) }}">

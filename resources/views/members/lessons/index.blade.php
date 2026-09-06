@@ -61,16 +61,17 @@
     {{-- 週の移動 --}}
     <div class="mb-3 flex items-center gap-2">
         @if ($previousWeekDate !== null)
-            <x-button size="sm" variant="secondary"
+            <x-button size="sm" variant="secondary" class="min-w-11 justify-center sm:min-w-0"
                       :href="route('lessons.index', $filters + ['date' => $previousWeekDate])"
                       aria-label="前の週">‹</x-button>
         @else
-            <x-button size="sm" type="button" variant="secondary" :disabled="true" aria-label="前の週">‹</x-button>
+            <x-button size="sm" type="button" variant="secondary" class="min-w-11 justify-center sm:min-w-0"
+                      :disabled="true" aria-label="前の週">‹</x-button>
         @endif
 
         <span class="text-sm font-medium tabular-nums text-gray-700 dark:text-gray-300">{{ $calendar->rangeLabel() }}</span>
 
-        <x-button size="sm" variant="secondary"
+        <x-button size="sm" variant="secondary" class="min-w-11 justify-center sm:min-w-0"
                   :href="route('lessons.index', $filters + ['date' => $nextWeekDate])"
                   aria-label="次の週">›</x-button>
 

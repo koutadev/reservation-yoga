@@ -2,7 +2,8 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {{-- 下端の固定 CTA をホームインジケータの上に逃がすため、セーフエリアを使える表示にする --}}
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ \App\Support\Theme\Theme::name() }}</title>
@@ -31,7 +32,7 @@
         --}}
         <div x-data="{}" class="flex min-h-screen flex-col">
             <header class="sticky top-0 z-30 bg-primary text-white shadow-sm">
-                <div class="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
+                <div class="px-safe mx-auto flex w-full max-w-6xl items-center gap-3 py-3">
                     <a href="{{ route('lessons.index') }}" class="flex min-h-11 min-w-0 items-center gap-2 sm:min-h-0">
                         <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/20 text-sm font-bold">
                             {{ \App\Support\Theme\Theme::initial() }}
@@ -92,7 +93,7 @@
                 </div>
             </header>
 
-            <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-5">
+            <main class="px-safe mx-auto w-full max-w-6xl flex-1 py-5">
                 {{ $slot }}
             </main>
 

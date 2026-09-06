@@ -32,7 +32,7 @@
         <div x-data="{}" class="flex min-h-screen flex-col">
             <header class="sticky top-0 z-30 bg-primary text-white shadow-sm">
                 <div class="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
-                    <a href="{{ route('lessons.index') }}" class="flex min-w-0 items-center gap-2">
+                    <a href="{{ route('lessons.index') }}" class="flex min-h-11 min-w-0 items-center gap-2 sm:min-h-0">
                         <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/20 text-sm font-bold">
                             {{ \App\Support\Theme\Theme::initial() }}
                         </span>
@@ -49,7 +49,7 @@
                             ] as $link)
                                 <a href="{{ route($link['route']) }}"
                                    @class([
-                                       'whitespace-nowrap rounded-full px-2.5 py-1.5 transition motion-reduce:transition-none sm:px-3',
+                                       'inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-2.5 py-1.5 transition motion-reduce:transition-none sm:min-h-0 sm:px-3',
                                        'bg-white/20 font-semibold' => request()->routeIs($link['active']),
                                        'hover:bg-white/10' => ! request()->routeIs($link['active']),
                                    ])>{{ $link['label'] }}</a>
@@ -60,7 +60,7 @@
                             <x-dropdown align="right" width="48">
                                 <x-slot name="trigger">
                                     <button type="button"
-                                            class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/25 motion-reduce:transition-none">
+                                            class="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/25 motion-reduce:transition-none sm:min-h-0">
                                         <span class="max-w-24 truncate">{{ auth()->user()->name }}</span>
                                         <svg class="h-3.5 w-3.5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />

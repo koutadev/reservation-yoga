@@ -17,7 +17,7 @@
 <x-member-layout>
     <div class="mx-auto max-w-2xl">
         <a href="{{ route('lessons.index', ['date' => $slot->starts_at->toDateString()]) }}"
-           class="mb-3 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400">
+           class="mb-3 inline-flex min-h-11 items-center gap-1 text-sm text-gray-500 hover:text-gray-700 sm:min-h-0 dark:text-gray-400">
             ‹ レッスン一覧へ
         </a>
 

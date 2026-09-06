@@ -64,7 +64,7 @@
                     <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-700">
                         <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">最近の操作</h3>
                         <a href="{{ route('activity-logs.index') }}"
-                           class="text-xs font-medium text-primary-text hover:text-primary-hover">
+                           class="inline-flex min-h-11 items-center text-xs font-medium text-primary-text hover:text-primary-hover sm:min-h-0">
                             すべて見る &rarr;
                         </a>
                     </div>

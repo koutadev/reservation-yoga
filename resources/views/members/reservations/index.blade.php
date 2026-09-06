@@ -69,7 +69,7 @@
                     </div>
 
                     <a href="{{ route('lessons.show', $slot->id) }}"
-                       class="mt-1.5 block font-semibold text-gray-900 hover:underline dark:text-gray-100">
+                       class="mt-1.5 flex min-h-11 items-center font-semibold text-gray-900 hover:underline sm:min-h-0 dark:text-gray-100">
                         {{ $slot->title }}
                     </a>
 
@@ -88,7 +88,7 @@
                     <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
                         @if ($slot->online_url)
                             <a href="{{ $slot->online_url }}" target="_blank" rel="noopener noreferrer"
-                               class="text-xs font-medium text-primary-text hover:underline">▶ オンラインで参加する</a>
+                               class="inline-flex min-h-11 items-center text-xs font-medium text-primary-text hover:underline sm:min-h-0">▶ オンラインで参加する</a>
                         @else
                             <span class="text-xs text-gray-400 dark:text-gray-500">参加 URL は当日までにご案内します</span>
                         @endif
@@ -96,7 +96,7 @@
                         @if ($cancelable)
                             <button type="button"
                                     x-on:click="$dispatch('open-modal', 'cancel-reservation-{{ $reservation->id }}')"
-                                    class="text-xs text-rose-600 hover:underline dark:text-rose-400">
+                                    class="inline-flex min-h-11 items-center text-xs text-rose-600 hover:underline sm:min-h-0 dark:text-rose-400">
                                 キャンセルする
                             </button>
 
@@ -144,7 +144,7 @@
                         </div>
 
                         <a href="{{ route('lessons.show', $slot->id) }}"
-                           class="mt-1.5 block font-semibold text-gray-900 hover:underline dark:text-gray-100">
+                           class="mt-1.5 flex min-h-11 items-center font-semibold text-gray-900 hover:underline sm:min-h-0 dark:text-gray-100">
                             {{ $slot->title }}
                         </a>
 
@@ -159,7 +159,7 @@
                             @method('DELETE')
                             <input type="hidden" name="from" value="my-reservations">
 
-                            <button type="submit" class="text-xs text-gray-500 hover:underline dark:text-gray-400">
+                            <button type="submit" class="inline-flex min-h-11 items-center text-xs text-gray-500 hover:underline sm:min-h-0 dark:text-gray-400">
                                 キャンセル待ちを取り消す
                             </button>
                         </form>
@@ -191,7 +191,7 @@
                     </div>
 
                     <a href="{{ route('lessons.show', $slot->id) }}"
-                       class="mt-1.5 block font-medium text-gray-800 hover:underline dark:text-gray-200">
+                       class="mt-1.5 flex min-h-11 items-center font-medium text-gray-800 hover:underline sm:min-h-0 dark:text-gray-200">
                         {{ $slot->title }}
                     </a>
 

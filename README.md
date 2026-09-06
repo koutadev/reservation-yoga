@@ -7,9 +7,10 @@
 
 | | |
 | --- | --- |
+| 公開デモ（静的） | **<https://yoga-demo-static.vercel.app>** — ログイン不要。実画面をそのまま書き出したもの（[書き出し方](#静的デモ)） |
+| ベースにした共通基盤 | [laravel-business-template](https://github.com/koutadev/laravel-business-template) — 解説は [docs/base-template.md](docs/base-template.md) |
 | 基本設計書 | [docs/basic-design.md](docs/basic-design.md) |
 | 画面モックアップ | [docs/mockup.html](docs/mockup.html)（実装前に方向性を固めた静的モック） |
-| ベースにした共通基盤 | [laravel-business-template](https://github.com/koutadev/laravel-business-template) — 解説は [docs/base-template.md](docs/base-template.md) |
 
 > 画面に出るデータはすべて架空のダミーです（スタジオ名・講師名・会員名とも、実在の団体・個人とは関係ありません）。
 
